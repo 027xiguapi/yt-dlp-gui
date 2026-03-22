@@ -5,6 +5,7 @@ import qtawesome as qta
 from dep_dl import DepWorker
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.main_window import Ui_MainWindow
+from ui.sniffer_dialog import SnifferDialog
 from utils import BIN_DIR, ROOT, ItemRoles, load_toml, save_toml
 from worker import DownloadWorker
 
@@ -75,6 +76,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.action_exit.triggered.connect(self.close)
         self.action_about.triggered.connect(self.show_about)
         self.action_clear_url_list.triggered.connect(self.te_link.clear)
+        self.action_browser_sniffer.triggered.connect(self.show_browser_sniffer)
 
     def on_dep_progress(self, status):
         self.statusBar.showMessage(status, 10000)
@@ -93,6 +95,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             f'<a href="https://github.com/dsymbol/yt-dlp-gui">yt-dlp-gui</a> {__version__}<br><br>'
             "A GUI for yt-dlp written in PySide6.",
         )
+    
+    def show_browser_sniffer(self):
+        """显示浏览器抓包工具对话框"""
+        dialog = SnifferDialog(self)
+        dialog.exec()
 
     def open_menu(self, position):
         menu = QtWidgets.QMenu()

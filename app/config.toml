@@ -1,9 +1,13 @@
 [general]
 current_preset = 0
-path = ""
-# appended to every preset (e.g "--cookies-from-browser firefox")
-global_args = ""
-# automatically update yt-dlp on program startup.
+path = "C:/Users/Administrator/Desktop"
+# 方案1：从浏览器自动读取Cookie（无需手动导出，推荐）
+# 支持 chrome/edge/firefox/safari 等，根据你的浏览器选择
+global_args = "--cookies-from-browser firefox"
+# 方案2：使用手动导出的Cookie文件（需先导出youtube_cookies.txt，替换为实际路径）
+# lobal_args = "--cookies D:/monorepo/yt-dlp-gui/app/youtube_cookies.txt"  # Windows示例
+# global_args = "--cookies /Users/xxx/yt-dlp-gui/youtube_cookies.txt"  # macOS示例
+# global_args = "--cookies /home/xxx/yt-dlp-gui/youtube_cookies.txt"  # Linux示例
 update_ytdlp = true
 
 # create your own presets or modify existing ones

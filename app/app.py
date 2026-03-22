@@ -39,7 +39,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.tw.setColumnWidth(0, 200)
         self.te_link.setFocus()
-        self.load_config()
+        
+        try:
+            self.load_config()
+        except Exception:
+            # 如果加载配置失败，直接返回，不继续初始化
+            return
 
         self.connect_ui()
         self.pb_download.setEnabled(False)
@@ -225,7 +230,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 "Config file error.",
             )
             logger.error("Config file error.", exc_info=True)
-            QtWidgets.QApplication.exit()
+            raise  # 抛出异常而不是直接退出
 
         update_ytdlp = self.config["general"].get("update_ytdlp")
         self.config["general"]["update_ytdlp"] = update_ytdlp if update_ytdlp else True

@@ -1,0 +1,12 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>assets/back.png</file>
+        <file>assets/forward.png</file>
+        <file>assets/refresh.png</file>
+        <file>assets/stop.png</file>
+        <file>assets/home.png</file>
+        <file>assets/copy.png</file>
+        <file>assets/download.png</file>
+    </qresource>
+</RCC>

@@ -231,6 +231,7 @@
      <string>Tools</string>
     </property>
     <addaction name="action_browser_sniffer"/>
+    <addaction name="action_youtube_browser"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -271,6 +272,11 @@
   <action name="action_browser_sniffer">
    <property name="text">
     <string>Browser Sniffer</string>
+   </property>
+  </action>
+  <action name="action_youtube_browser">
+   <property name="text">
+    <string>YouTube Browser</string>
    </property>
   </action>
  </widget>

@@ -6,6 +6,7 @@ from dep_dl import DepWorker
 from PySide6 import QtCore, QtGui, QtWidgets
 from ui.main_window import Ui_MainWindow
 from ui.sniffer_dialog import SnifferDialog
+from ui.youtube_browser_dialog import YoutubeBrowserDialog
 from utils import BIN_DIR, ROOT, ItemRoles, load_toml, save_toml
 from worker import DownloadWorker
 
@@ -77,6 +78,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.action_about.triggered.connect(self.show_about)
         self.action_clear_url_list.triggered.connect(self.te_link.clear)
         self.action_browser_sniffer.triggered.connect(self.show_browser_sniffer)
+        
+        # YouTube browser
+        self.action_youtube_browser.triggered.connect(self.show_youtube_browser)
 
     def on_dep_progress(self, status):
         self.statusBar.showMessage(status, 10000)
@@ -100,6 +104,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """显示浏览器抓包工具对话框"""
         dialog = SnifferDialog(self)
         dialog.exec()
+    
+    def show_youtube_browser(self):
+        """显示 YouTube 浏览器"""
+        dialog = YoutubeBrowserDialog(self)
+        dialog.exec()
+    
+    def add_url_to_download(self, url):
+        """添加 URL 到下载列表"""
+        # 检查 URL 是否有效
+        if url and ("youtube.com" in url or "youtu.be" in url):
+            # 清除 URL 输入框并添加新 URL
+            self.te_link.clear()
+            self.te_link.appendPlainText(url)
+            # 自动添加到下载列表
+            self.button_add()
 
     def open_menu(self, position):
         menu = QtWidgets.QMenu()

@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class DownloadWorker(QtCore.QThread):
     progress = QtCore.Signal(object, list)
 
-    def __init__(self, item, config, link, path, preset):
+    def __init__(self, item, config, link, path, preset, cookie_path=None):
         super().__init__()
         self.item: QtWidgets.QTreeWidgetItem = item
         self.link = link
         self.path = path
         self.preset = preset
+        self.cookie_path = cookie_path
         self.id = self.item.data(0, ItemRoles.IdRole)
         self.command = self.build_command(config)
         self._mutex = QtCore.QMutex()
@@ -31,13 +32,20 @@ class DownloadWorker(QtCore.QThread):
             "--progress",
             "--progress-template",
             "%(progress.status)s__SEP__%(progress._total_bytes_estimate_str)s__SEP__%(progress._percent_str)s__SEP__%(progress._speed_str)s__SEP__%(progress._eta_str)s__SEP__%(info.title)s",
+            "--extractor-args", "youtube:player_js_variant=main",
         ]
         p_args = config["presets"][self.preset]
         g_args = config["general"].get("global_args")
 
         args += ["-P", self.path]
         args += p_args if isinstance(p_args, list) else shlex.split(p_args)
-        args += g_args if isinstance(g_args, list) else shlex.split(g_args)
+
+        # 如果 UI 设置了 cookie 文件，优先使用它，否则使用 global_args
+        if self.cookie_path:
+            args += ["--cookies", self.cookie_path]
+        elif g_args:
+            args += g_args if isinstance(g_args, list) else shlex.split(g_args)
+
         args += ["--", self.link]
         return args
 

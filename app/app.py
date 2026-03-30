@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ui.main_window import Ui_MainWindow
 from ui.sniffer_dialog import SnifferDialog
 from ui.youtube_browser_dialog import YoutubeBrowserDialog
+from ui.channel_extractor_dialog import ChannelExtractorDialog
 from utils import BIN_DIR, ROOT, ItemRoles, load_toml, save_toml
 from worker import DownloadWorker
 
@@ -67,6 +68,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def connect_ui(self):
         # buttons
         self.pb_path.clicked.connect(self.button_path)
+        if hasattr(self, 'pb_cookie'):
+            self.pb_cookie.clicked.connect(self.button_cookie)
+            logger.info("Cookie button connected successfully")
+        else:
+            logger.warning("pb_cookie button not found in UI")
         self.pb_add.clicked.connect(self.button_add)
         self.pb_clear.clicked.connect(self.button_clear)
         self.pb_download.clicked.connect(self.button_download)
@@ -78,9 +84,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.action_about.triggered.connect(self.show_about)
         self.action_clear_url_list.triggered.connect(self.te_link.clear)
         self.action_browser_sniffer.triggered.connect(self.show_browser_sniffer)
-        
+
         # YouTube browser
         self.action_youtube_browser.triggered.connect(self.show_youtube_browser)
+
+        # YouTube channel extractor
+        if hasattr(self, 'action_channel_extractor'):
+            self.action_channel_extractor.triggered.connect(self.show_channel_extractor)
 
     def on_dep_progress(self, status):
         self.statusBar.showMessage(status, 10000)
@@ -109,7 +119,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """显示 YouTube 浏览器"""
         dialog = YoutubeBrowserDialog(self)
         dialog.exec()
-    
+
+    def show_channel_extractor(self):
+        """Show YouTube channel extractor dialog"""
+        dialog = ChannelExtractorDialog(self)
+        dialog.urls_ready.connect(self.add_urls_from_channel)
+        dialog.exec()
+
+    def add_urls_from_channel(self, urls, channel_name):
+        """Add URLs extracted from channel to download list"""
+        urls_text = "\n".join(urls)
+        self.te_link.clear()
+        self.te_link.appendPlainText(urls_text)
+        self.statusBar.showMessage(f"Added {len(urls)} videos from {channel_name}", 5000)
+
     def add_url_to_download(self, url):
         """添加 URL 到下载列表"""
         # 检查 URL 是否有效
@@ -168,6 +191,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if path:
             self.le_path.setText(path)
 
+    def button_cookie(self):
+        logger.info("Cookie button clicked")
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Select cookies file",
+            self.le_cookie.text() or QtCore.QDir.homePath(),
+            "Cookie files (*.txt);;All files (*.*)",
+        )
+
+        if file_path:
+            self.le_cookie.setText(file_path)
+            logger.info(f"Cookie file selected: {file_path}")
+
     def button_add(self):
         missing = []
         preset = self.dd_preset.currentText()
@@ -206,7 +242,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             item.setData(0, ItemRoles.LinkRole, link)
             item.setData(0, ItemRoles.PathRole, path)
 
-            worker = DownloadWorker(item, self.config, link, path, preset)
+            cookie_path = self.le_cookie.text().strip() or None
+            worker = DownloadWorker(item, self.config, link, path, preset, cookie_path)
             self.to_dl[self.index] = worker
             logger.info(f"Queued download ({self.index}) added {link}")
             self.index += 1
@@ -263,10 +300,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dd_preset.addItems(self.config["presets"].keys())
         self.dd_preset.setCurrentIndex(self.config["general"]["current_preset"])
         self.le_path.setText(self.config["general"]["path"])
+        self.le_cookie.setText(self.config["general"].get("cookie_path", ""))
 
     def closeEvent(self, event):
         self.config["general"]["current_preset"] = self.dd_preset.currentIndex()
         self.config["general"]["path"] = self.le_path.text()
+        self.config["general"]["cookie_path"] = self.le_cookie.text()
         save_toml(ROOT / "config.toml", self.config)
         event.accept()
 

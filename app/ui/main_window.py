@@ -41,6 +41,8 @@ class Ui_MainWindow(object):
         self.action_browser_sniffer.setObjectName(u"action_browser_sniffer")
         self.action_youtube_browser = QAction(MainWindow)
         self.action_youtube_browser.setObjectName(u"action_youtube_browser")
+        self.action_channel_extractor = QAction(MainWindow)
+        self.action_channel_extractor.setObjectName(u"action_channel_extractor")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         font = QFont()
@@ -95,6 +97,23 @@ class Ui_MainWindow(object):
         self.te_link.setObjectName(u"te_link")
 
         self.gridLayout.addWidget(self.te_link, 0, 1, 1, 4)
+
+        self.lb_cookie = QLabel(self.gb_params)
+        self.lb_cookie.setObjectName(u"lb_cookie")
+        self.lb_cookie.setMinimumSize(QSize(0, 0))
+
+        self.gridLayout.addWidget(self.lb_cookie, 1, 0, 1, 1)
+
+        self.le_cookie = QLineEdit(self.gb_params)
+        self.le_cookie.setObjectName(u"le_cookie")
+        self.le_cookie.setPlaceholderText("Path to cookies file (Netscape format)")
+
+        self.gridLayout.addWidget(self.le_cookie, 1, 1, 1, 1)
+
+        self.pb_cookie = QPushButton(self.gb_params)
+        self.pb_cookie.setObjectName(u"pb_cookie")
+
+        self.gridLayout.addWidget(self.pb_cookie, 1, 2, 1, 1)
 
         self.gridLayout.setColumnStretch(0, 1)
         self.gridLayout.setColumnStretch(1, 5)
@@ -173,6 +192,7 @@ class Ui_MainWindow(object):
         self.menuEdit.addAction(self.action_clear_url_list)
         self.menuTools.addAction(self.action_browser_sniffer)
         self.menuTools.addAction(self.action_youtube_browser)
+        self.menuTools.addAction(self.action_channel_extractor)
         self.menuHelp.addAction(self.action_about)
 
         self.retranslateUi(MainWindow)
@@ -189,10 +209,13 @@ class Ui_MainWindow(object):
         self.action_open_log_folder.setText(QCoreApplication.translate("MainWindow", u"Open Log Folder", None))
         self.action_browser_sniffer.setText(QCoreApplication.translate("MainWindow", u"Browser Sniffer", None))
         self.action_youtube_browser.setText(QCoreApplication.translate("MainWindow", u"YouTube Browser", None))
+        self.action_channel_extractor.setText(QCoreApplication.translate("MainWindow", u"Channel Video Extractor", None))
         self.gb_params.setTitle(QCoreApplication.translate("MainWindow", u"Parameters", None))
         self.lb_path.setText(QCoreApplication.translate("MainWindow", u"Save to", None))
         self.pb_path.setText(QCoreApplication.translate("MainWindow", u"Browse...", None))
         self.lb_link.setText(QCoreApplication.translate("MainWindow", u"Video URL(s)", None))
+        self.lb_cookie.setText(QCoreApplication.translate("MainWindow", u"Cookies", None))
+        self.pb_cookie.setText(QCoreApplication.translate("MainWindow", u"Browse...", None))
         self.gb_downloads.setTitle(QCoreApplication.translate("MainWindow", u"Downloads", None))
         ___qtreewidgetitem = self.tw.headerItem()
         ___qtreewidgetitem.setText(6, QCoreApplication.translate("MainWindow", u"ETA", None));

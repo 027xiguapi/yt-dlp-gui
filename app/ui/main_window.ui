@@ -232,6 +232,7 @@
     </property>
     <addaction name="action_browser_sniffer"/>
     <addaction name="action_youtube_browser"/>
+    <addaction name="action_channel_extractor"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -277,6 +278,11 @@
   <action name="action_youtube_browser">
    <property name="text">
     <string>YouTube Browser</string>
+   </property>
+  </action>
+  <action name="action_channel_extractor">
+   <property name="text">
+    <string>Channel Video Extractor</string>
    </property>
   </action>
  </widget>

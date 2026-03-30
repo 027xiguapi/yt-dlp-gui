@@ -11,6 +11,7 @@ global_args = "--cookies-from-browser firefox"
 update_ytdlp = true
 
 # create your own presets or modify existing ones
+cookie_path = "D:/work/yt-dlp-gui/www.youtube.com_cookies.txt"
 [presets]
 best = "-f bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b"
 mp4 = "-f bv*[vcodec^=avc]+ba[ext=m4a]/b"

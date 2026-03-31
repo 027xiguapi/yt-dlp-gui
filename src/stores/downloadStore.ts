@@ -15,6 +15,8 @@ export interface DownloadTask {
   title: string
 }
 
+const STORAGE_KEY = 'yt-dlp-downloads'
+
 export const useDownloadStore = defineStore('download', () => {
   const tasks = ref<Map<string, DownloadTask>>(new Map())
 
@@ -32,6 +34,30 @@ export const useDownloadStore = defineStore('download', () => {
     error: taskList.value.filter(t => t.status === 'ERROR').length,
   }))
 
+  function loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const taskArray = JSON.parse(stored)
+        tasks.value.clear()
+        taskArray.forEach((task: DownloadTask) => {
+          tasks.value.set(task.id, task)
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error)
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      const taskArray = Array.from(tasks.value.values())
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(taskArray))
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
+
   async function addTask(url: string, preset: string, path: string) {
     const taskId = await invoke<string>('generate_task_id')
     const task: DownloadTask = {
@@ -47,6 +73,7 @@ export const useDownloadStore = defineStore('download', () => {
       title: url,
     }
     tasks.value.set(taskId, task)
+    saveToStorage()
     return taskId
   }
 
@@ -63,6 +90,7 @@ export const useDownloadStore = defineStore('download', () => {
     const task = tasks.value.get(id)
     if (task) {
       Object.assign(task, updates)
+      saveToStorage()
     }
   }
 
@@ -70,6 +98,7 @@ export const useDownloadStore = defineStore('download', () => {
     const task = tasks.value.get(id)
     if (task && (task.status === 'Queued' || task.status === 'Finished' || task.status === 'ERROR')) {
       tasks.value.delete(id)
+      saveToStorage()
     }
   }
 
@@ -79,14 +108,20 @@ export const useDownloadStore = defineStore('download', () => {
         tasks.value.delete(id)
       }
     }
+    saveToStorage()
   }
 
   function clearAll() {
     tasks.value.clear()
+    saveToStorage()
   }
 
   function getTask(id: string) {
     return tasks.value.get(id)
+  }
+
+  function initializeFromStorage() {
+    loadFromStorage()
   }
 
   return {
@@ -101,5 +136,6 @@ export const useDownloadStore = defineStore('download', () => {
     clearCompleted,
     clearAll,
     getTask,
+    initializeFromStorage,
   }
 })

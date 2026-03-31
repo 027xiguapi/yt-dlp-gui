@@ -9,6 +9,8 @@ export interface CapturedResource {
   size: number
 }
 
+const STORAGE_KEY = 'yt-dlp-sniffer'
+
 export const useSnifferStore = defineStore('sniffer', () => {
   const videoUrl = ref('')
   const isSniffing = ref(false)
@@ -16,6 +18,33 @@ export const useSnifferStore = defineStore('sniffer', () => {
   const videos = ref<CapturedResource[]>([])
   const images = ref<CapturedResource[]>([])
   const error = ref('')
+
+  function loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const data = JSON.parse(stored)
+        videoUrl.value = data.videoUrl || ''
+        videos.value = data.videos || []
+        images.value = data.images || []
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error)
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      const data = {
+        videoUrl: videoUrl.value,
+        videos: videos.value,
+        images: images.value,
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
 
   async function sniffResources(url: string) {
     if (!url.trim()) {
@@ -37,6 +66,7 @@ export const useSnifferStore = defineStore('sniffer', () => {
       videos.value = videoResources
       images.value = imageResources
       sniffProgress.value = 100
+      saveToStorage()
       return true
     } catch (err) {
       error.value = `Error: ${err}`
@@ -49,6 +79,7 @@ export const useSnifferStore = defineStore('sniffer', () => {
 
   function setVideoUrl(url: string) {
     videoUrl.value = url
+    saveToStorage()
   }
 
   function setSniffProgress(progress: number) {
@@ -60,6 +91,11 @@ export const useSnifferStore = defineStore('sniffer', () => {
     images.value = []
     videoUrl.value = ''
     error.value = ''
+    saveToStorage()
+  }
+
+  function initializeFromStorage() {
+    loadFromStorage()
   }
 
   return {
@@ -73,5 +109,6 @@ export const useSnifferStore = defineStore('sniffer', () => {
     setVideoUrl,
     setSniffProgress,
     clearResources,
+    initializeFromStorage,
   }
 })

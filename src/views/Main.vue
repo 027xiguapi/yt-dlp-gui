@@ -260,10 +260,6 @@ const columns = [
           :pagination="false"
           :max-height="500"
         />
-        
-        <div v-if="downloadStore.taskList.length === 0" style="padding: 40px 0">
-          <n-empty description="暂无下载任务，请在上方添加链接" />
-        </div>
       </n-card>
     </n-space>
   </div>

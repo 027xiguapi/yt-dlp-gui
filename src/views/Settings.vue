@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { NCard, NSpace, NButton, NInput, NSwitch, NAlert } from "naive-ui";
+import { 
+  NCard, NSpace, NButton, NInput, NSwitch, NAlert, 
+  NForm, NFormItem, NIcon, NTooltip, NDivider 
+} from "naive-ui";
+import { 
+  FolderOpen, FileText, Save, RotateCcw, 
+  Info, ShieldCheck, DownloadCloud 
+} from "@lucide/vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useConfigStore } from "../stores/configStore";
 
 const configStore = useConfigStore();
-
-console.log("Current config:", configStore.config);
 const saveMessage = ref("");
+const saveStatus = ref<"success" | "error" | "">("");
 
 onMounted(async () => {
   await configStore.loadConfig();
@@ -18,7 +24,7 @@ async function selectFolder() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Select Download Folder"
+      title: "选择下载保存目录"
     });
     if (selected && typeof selected === "string") {
       configStore.setDownloadPath(selected);
@@ -32,7 +38,7 @@ async function selectCookieFile() {
   try {
     const selected = await open({
       multiple: false,
-      title: "Select Cookie File",
+      title: "选择 Cookie 文件",
       filters: [
         { name: "Text Files", extensions: ["txt"] },
         { name: "All Files", extensions: ["*"] }
@@ -49,12 +55,14 @@ async function selectCookieFile() {
 async function saveSettings() {
   try {
     await configStore.saveConfig();
-    saveMessage.value = "Settings saved successfully!";
+    saveStatus.value = "success";
+    saveMessage.value = "配置已成功保存到本地！";
     setTimeout(() => {
       saveMessage.value = "";
     }, 3000);
   } catch (error) {
-    saveMessage.value = `Error: ${error}`;
+    saveStatus.value = "error";
+    saveMessage.value = `保存失败: ${error}`;
   }
 }
 
@@ -68,97 +76,192 @@ function resetSettings() {
 </script>
 
 <template>
-  <div class="settings">
-    <n-space vertical :size="16" style="padding: 20px">
-      <!-- Header -->
-      <div class="header">
-        <h1>Settings</h1>
+  <div class="settings-container">
+    <header class="settings-header">
+      <div class="header-content">
+        <n-icon size="28" :component="DownloadCloud" />
+        <div class="header-text">
+          <h1>软件设置</h1>
+          <span>管理下载偏好、核心引擎及身份验证</span>
+        </div>
       </div>
+    </header>
 
-      <!-- Message -->
-      <n-alert v-if="saveMessage" type="success" closable>
-        {{ saveMessage }}
-      </n-alert>
+    <main class="settings-content">
+      <n-space vertical :size="20">
+        <transition name="fade">
+          <n-alert v-if="saveMessage" :type="saveStatus || 'success'" closable shadow>
+            {{ saveMessage }}
+          </n-alert>
+        </transition>
 
-      <!-- Download Settings -->
-      <n-card title="Download Settings" :segmented="{ content: true }">
-        <n-space vertical :size="12">
-          <div>
-            <label class="label">Download Path:</label>
-            <n-space :size="8">
-              <n-input v-model:value="configStore.downloadPath" type="text" style="flex: 1" />
-              <n-button @click="selectFolder">Browse</n-button>
-            </n-space>
-          </div>
+        <n-form label-placement="top">
+          <n-card title="下载配置" hoverable :segmented="{ content: true }">
+            <template #header-extra>
+              <n-icon size="20" color="#3b82f6" :component="ShieldCheck" />
+            </template>
+            
+            <n-form-item label="默认下载路径">
+              <n-input-group>
+                <n-input 
+                  v-model:value="configStore.downloadPath" 
+                  placeholder="点击右侧按钮选择路径" 
+                  readonly 
+                />
+                <n-button type="primary" secondary @click="selectFolder">
+                  <template #icon><n-icon :component="FolderOpen" /></template>
+                  浏览
+                </n-button>
+              </n-input-group>
+            </n-form-item>
 
-          <div style="display: flex; align-items: center; justify-content: space-between">
-            <label class="label" style="margin-bottom: 0">Auto Update yt-dlp:</label>
-            <n-switch
-              :value="configStore.updateYtdlp === 'true'"
-              @update:value="(val) => configStore.setUpdateYtdlp(val ? 'true' : 'false')"
-            />
-          </div>
-        </n-space>
-      </n-card>
+            <n-divider />
 
-      <!-- Cookie Settings -->
-      <n-card title="Cookie Settings" :segmented="{ content: true }">
-        <n-space vertical :size="12">
-          <div>
-            <label class="label">Cookie File Path:</label>
-            <n-space :size="8">
-              <n-input
-                v-model:value="configStore.cookiePath"
-                type="text"
-                placeholder="Path to cookies.txt file"
-                style="flex: 1"
+            <div class="setting-row">
+              <div class="row-info">
+                <span class="row-label">自动更新 yt-dlp</span>
+                <span class="row-desc">开启后每次启动程序将检查并更新下载引擎</span>
+              </div>
+              <n-switch
+                :value="configStore.updateYtdlp === 'true'"
+                @update:value="(val) => configStore.setUpdateYtdlp(val ? 'true' : 'false')"
               />
-              <n-button @click="selectCookieFile">Select</n-button>
-              <n-button v-if="configStore.cookiePath" @click="configStore.clearCookiePath" type="error">
-                Clear
-              </n-button>
-            </n-space>
-          </div>
-          <p style="font-size: 12px; color: #999; margin: 0">
-            Cookie file is used for authenticated downloads. Leave empty to use browser cookies.
-          </p>
-        </n-space>
-      </n-card>
+            </div>
+          </n-card>
 
-      <!-- Actions -->
-      <n-space :size="8">
-        <n-button type="primary" @click="saveSettings">Save Settings</n-button>
-        <n-button @click="resetSettings">Reset</n-button>
+          <n-card title="身份验证 (Cookies)" hoverable style="margin-top: 16px">
+            <n-form-item>
+              <template #label>
+                <n-space :size="4" align="center">
+                  <span>Cookie 文件路径</span>
+                  <n-tooltip trigger="hover">
+                    <template #trigger>
+                      <n-icon :component="Info" color="#999" />
+                    </template>
+                    使用 Cookie 可以下载会员视频或绕过限制
+                  </n-tooltip>
+                </n-space>
+              </template>
+              
+              <n-input-group>
+                <n-input
+                  v-model:value="configStore.cookiePath"
+                  placeholder="cookies.txt 绝对路径"
+                />
+                <n-button @click="selectCookieFile">
+                  <template #icon><n-icon :component="FileText" /></template>
+                  选择
+                </n-button>
+                <n-button v-if="configStore.cookiePath" type="error" ghost @click="configStore.clearCookiePath">
+                  清除
+                </n-button>
+              </n-input-group>
+            </n-form-item>
+            <p class="hint">如果不配置，程序将尝试从系统默认浏览器获取授权。</p>
+          </n-card>
+        </n-form>
+
+        <div class="actions-bar">
+          <n-space justify="end" :size="12">
+            <n-button strong secondary @click="resetSettings">
+              <template #icon><n-icon :component="RotateCcw" /></template>
+              重置
+            </n-button>
+            <n-button strong type="primary" size="large" @click="saveSettings">
+              <template #icon><n-icon :component="Save" /></template>
+              保存更改
+            </n-button>
+          </n-space>
+        </div>
       </n-space>
-    </n-space>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.settings {
+.settings-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100vh;
+  background-color: #f6f8fa;
 }
 
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Header 优化 */
+.settings-header {
+  background: #fff;
+  padding: 32px 40px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.header h1 {
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header-text h1 {
   margin: 0;
   font-size: 24px;
+  font-weight: 600;
+  color: #111827;
 }
 
-.label {
-  display: block;
-  margin-bottom: 8px;
+.header-text span {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* 主内容区 */
+.settings-content {
+  flex: 1;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* 行布局优化 */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-label {
   font-weight: 500;
-  color: #555;
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.row-desc {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 8px;
+}
+
+/* 底部栏 */
+.actions-bar {
+  margin-top: 24px;
+  padding: 20px 0;
+  border-top: 1px dashed #d1d5db;
+}
+
+/* 动画 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -3,10 +3,12 @@ import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 export interface ChannelExtractionResult {
-  urls: Vec<string>
+  urls: string[]
   channel_name: string
   total_videos: number
 }
+
+const STORAGE_KEY = 'yt-dlp-channel'
 
 export const useChannelStore = defineStore('channel', () => {
   const channelUrl = ref('')
@@ -15,6 +17,33 @@ export const useChannelStore = defineStore('channel', () => {
   const extractedUrls = ref<string[]>([])
   const extractedChannelName = ref('')
   const error = ref('')
+
+  function loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const data = JSON.parse(stored)
+        channelUrl.value = data.channelUrl || ''
+        extractedUrls.value = data.extractedUrls || []
+        extractedChannelName.value = data.extractedChannelName || ''
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error)
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      const data = {
+        channelUrl: channelUrl.value,
+        extractedUrls: extractedUrls.value,
+        extractedChannelName: extractedChannelName.value,
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
 
   async function extractChannelUrls(url: string) {
     if (!url.trim()) {
@@ -34,6 +63,7 @@ export const useChannelStore = defineStore('channel', () => {
       })
       extractedUrls.value = result.urls
       extractedChannelName.value = result.channel_name
+      saveToStorage()
       return true
     } catch (err) {
       error.value = `Error: ${err}`
@@ -46,6 +76,7 @@ export const useChannelStore = defineStore('channel', () => {
 
   function setChannelUrl(url: string) {
     channelUrl.value = url
+    saveToStorage()
   }
 
   function setExtractionProgress(progress: number) {
@@ -57,6 +88,11 @@ export const useChannelStore = defineStore('channel', () => {
     extractedChannelName.value = ''
     channelUrl.value = ''
     error.value = ''
+    saveToStorage()
+  }
+
+  function initializeFromStorage() {
+    loadFromStorage()
   }
 
   return {
@@ -70,5 +106,6 @@ export const useChannelStore = defineStore('channel', () => {
     setChannelUrl,
     setExtractionProgress,
     clearExtraction,
+    initializeFromStorage,
   }
 })

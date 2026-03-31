@@ -13,25 +13,67 @@ export interface Config {
   presets: Record<string, string>
 }
 
+const STORAGE_KEY = 'yt-dlp-config'
+
 export const useConfigStore = defineStore('config', () => {
   const config = ref<Config | null>(null)
   const downloadPath = ref('')
   const cookiePath = ref('')
   const selectedPreset = ref('best')
   const globalArgs = ref('')
-  const updateYtdlp = ref(true)
+  const updateYtdlp = ref('true')
   const isLoading = ref(false)
+
+  function loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const data = JSON.parse(stored)
+        downloadPath.value = data.downloadPath || ''
+        cookiePath.value = data.cookiePath || ''
+        selectedPreset.value = data.selectedPreset || 'best'
+        globalArgs.value = data.globalArgs || ''
+        updateYtdlp.value = data.updateYtdlp || 'true'
+      }
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error)
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      const data = {
+        downloadPath: downloadPath.value,
+        cookiePath: cookiePath.value,
+        selectedPreset: selectedPreset.value,
+        globalArgs: globalArgs.value,
+        updateYtdlp: updateYtdlp.value,
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
+    }
+  }
 
   async function loadConfig() {
     isLoading.value = true
     try {
+      loadFromStorage()
       const defaultConfig = await invoke<Config>('get_default_config')
       config.value = defaultConfig
-      downloadPath.value = defaultConfig.general.path
-      cookiePath.value = defaultConfig.general.cookie_path
-      selectedPreset.value = Object.keys(defaultConfig.presets)[defaultConfig.general.current_preset] || 'best'
-      globalArgs.value = defaultConfig.general.global_args
-      updateYtdlp.value = defaultConfig.general.update_ytdlp
+      if (!downloadPath.value) {
+        downloadPath.value = defaultConfig.general.path
+      }
+      if (!cookiePath.value) {
+        cookiePath.value = defaultConfig.general.cookie_path
+      }
+      if (!selectedPreset.value) {
+        selectedPreset.value = Object.keys(defaultConfig.presets)[defaultConfig.general.current_preset] || 'best'
+      }
+      if (!globalArgs.value) {
+        globalArgs.value = defaultConfig.general.global_args
+      }
+      saveToStorage()
     } catch (error) {
       console.error('Failed to load config:', error)
     } finally {
@@ -40,54 +82,37 @@ export const useConfigStore = defineStore('config', () => {
   }
 
   async function saveConfig() {
-    if (!config.value) return
-
-    const updatedConfig: Config = {
-      ...config.value,
-      general: {
-        ...config.value.general,
-        path: downloadPath.value,
-        cookie_path: cookiePath.value,
-        global_args: globalArgs.value,
-        update_ytdlp: updateYtdlp.value,
-      },
-    }
-
-    // try {
-    //   await invoke('save_config', {
-    //     path: 'config.toml',
-    //     config: updatedConfig,
-    //   })
-    //   config.value = updatedConfig
-    //   return true
-    // } catch (error) {
-    //   console.error('Failed to save config:', error)
-    //   throw error
-    // }
+    saveToStorage()
   }
 
   function setDownloadPath(path: string) {
     downloadPath.value = path
+    saveToStorage()
   }
 
   function setCookiePath(path: string) {
     cookiePath.value = path
+    saveToStorage()
   }
 
   function clearCookiePath() {
     cookiePath.value = ''
+    saveToStorage()
   }
 
   function setSelectedPreset(preset: string) {
     selectedPreset.value = preset
+    saveToStorage()
   }
 
   function setGlobalArgs(args: string) {
     globalArgs.value = args
+    saveToStorage()
   }
 
-  function setUpdateYtdlp(value: boolean) {
-    updateYtdlp.value = value
+  function setUpdateYtdlp(value: string | boolean) {
+    updateYtdlp.value = typeof value === 'string' ? value : (value ? 'true' : 'false')
+    saveToStorage()
   }
 
   return {

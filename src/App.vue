@@ -1,69 +1,86 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
-import { NLayout, NLayoutSider, NMenu, NLayoutContent, NMessageProvider } from 'naive-ui'
+import { 
+  NLayout, NLayoutSider, NMenu, NLayoutContent, 
+  NMessageProvider, NConfigProvider, zhCN, dateZhCN, GlobalThemeOverrides 
+} from 'naive-ui'
 import { Download, Radar, Settings, Clapperboard } from '@lucide/vue'
 import { h } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
 
-const menuOptions = [
-  {
-    label: 'Downloader',
-    key: '/',
-    icon: () => h(Download, { size: 18 })
-  },
-  {
-    label: 'Channel Extraction',
-    key: '/channel-extraction',
-    icon: () => h(Clapperboard, { size: 18 })
-  },
-  {
-    label: 'Resource Sniffer',
-    key: '/sniffer',
-    icon: () => h(Radar, { size: 18 })
-  },
-  {
-    label: 'Settings',
-    key: '/settings',
-    icon: () => h(Settings, { size: 18 })
+// 自定义主题色 (现代科技蓝)
+const themeOverrides: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#3b82f6',
+    primaryColorHover: '#60a5fa',
+    borderRadius: '8px'
   }
+}
+
+const menuOptions = [
+  { label: '下载管理', key: '/', icon: () => h(Download, { size: 18 }) },
+  { label: '频道提取', key: '/channel-extraction', icon: () => h(Clapperboard, { size: 18 }) },
+  { label: '资源嗅探', key: '/sniffer', icon: () => h(Radar, { size: 18 }) },
+  { label: '软件设置', key: '/settings', icon: () => h(Settings, { size: 18 }) }
 ]
 
-function handleMenuSelect(key: string) {
-  router.push(key)
-}
+function handleMenuSelect(key: string) { router.push(key) }
 </script>
 
 <template>
-  <n-message-provider>
-    <n-layout has-sider style="height: 100vh">
-      <n-layout-sider
-        collapse-mode="width"
-        :collapsed-width="64"
-        :width="200"
-        :native-scrollbar="false"
-      >
-        <div style="padding: 16px; color: black; font-weight: bold; text-align: center">
-          YT-DLP
-        </div>
-        <n-menu
-          :value="route.path"
-          :options="menuOptions"
-          @update:value="handleMenuSelect"
-          :collapsed="false"
+  <n-config-provider :theme-overrides="themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
+    <n-message-provider>
+      <n-layout has-sider class="app-wrapper">
+        <n-layout-sider
+          bordered
+          collapse-mode="width"
           :collapsed-width="64"
-          :collapsed-icon-size="22"
-        />
-      </n-layout-sider>
-      <n-layout>
-        <n-layout-content style="padding: 0; height: 100vh; overflow-y: auto">
-          <router-view />
-        </n-layout-content>
+          :width="220"
+          class="app-sider"
+        >
+          <div class="logo-container">
+            <div class="logo-icon">YT</div>
+            <span class="logo-text">YT-DLP GUI</span>
+          </div>
+          <n-menu
+            :value="route.path"
+            :options="menuOptions"
+            @update:value="handleMenuSelect"
+          />
+        </n-layout-sider>
+        <n-layout class="main-layout">
+          <n-layout-content class="content-scroll">
+            <router-view />
+          </n-layout-content>
+        </n-layout>
       </n-layout>
-    </n-layout>
-  </n-message-provider>
+    </n-message-provider>
+  </n-config-provider>
 </template>
 
 <style scoped>
+.app-wrapper { height: 100vh; background-color: #f9fafb; }
+.app-sider { background-color: #ffffff; }
+.logo-container {
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-icon {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+}
+.logo-text { font-size: 18px; font-weight: 700; color: #111827; }
+.main-layout { background-color: #f3f4f6; }
+.content-scroll { padding: 0; height: 100vh; }
 </style>

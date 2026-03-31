@@ -399,6 +399,7 @@ async fn sniff_youtube_resources(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             get_default_config,
             load_config,

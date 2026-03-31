@@ -1,0 +1,11 @@
+[general]
+current_preset = 0
+path = 'C:\Users\Administrator\Downloads'
+global_args = "--cookies-from-browser firefox"
+update_ytdlp = true
+cookie_path = 'C:\Users\Administrator\Desktop\aorAAAAAGnc_HItuMD2I9eWxgfws8XiEWwdrKogE.txt'
+
+[presets]
+mp4 = "-f bv*[vcodec^=avc]+ba[ext=m4a]/b"
+best = "-f bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b"
+mp3 = "--extract-audio --audio-format mp3 --audio-quality 0"

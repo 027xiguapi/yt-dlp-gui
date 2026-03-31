@@ -7,6 +7,11 @@ const routes = [
     meta: { title: 'Downloader' }
   },
   {
+    path: '/channel-extraction',
+    component: () => import('../views/ChannelExtraction.vue'),
+    meta: { title: 'Channel Extraction' }
+  },
+  {
     path: '/sniffer',
     component: () => import('../views/Sniffer.vue'),
     meta: { title: 'Resource Sniffer' }

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { NCard, NSpace, NButton, NInput, NSelect, NAlert } from "naive-ui";
+import { NCard, NSpace, NButton, NInput, NSwitch, NAlert } from "naive-ui";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useConfigStore } from "../stores/configStore";
 
 const configStore = useConfigStore();
+
+console.log("Current config:", configStore.config);
 const saveMessage = ref("");
 
 onMounted(async () => {
@@ -11,16 +14,35 @@ onMounted(async () => {
 });
 
 async function selectFolder() {
-  const newPath = prompt("Enter download path:", configStore.downloadPath);
-  if (newPath) {
-    configStore.setDownloadPath(newPath);
+  try {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: "Select Download Folder"
+    });
+    if (selected && typeof selected === "string") {
+      configStore.setDownloadPath(selected);
+    }
+  } catch (error) {
+    console.error("Failed to select folder:", error);
   }
 }
 
 async function selectCookieFile() {
-  const newPath = prompt("Enter cookie file path:", configStore.cookiePath);
-  if (newPath) {
-    configStore.setCookiePath(newPath);
+  try {
+    const selected = await open({
+      multiple: false,
+      title: "Select Cookie File",
+      filters: [
+        { name: "Text Files", extensions: ["txt"] },
+        { name: "All Files", extensions: ["*"] }
+      ]
+    });
+    if (selected && typeof selected === "string") {
+      configStore.setCookiePath(selected);
+    }
+  } catch (error) {
+    console.error("Failed to select file:", error);
   }
 }
 
@@ -40,7 +62,6 @@ function resetSettings() {
   if (configStore.config) {
     configStore.setDownloadPath(configStore.config.general.path);
     configStore.setCookiePath(configStore.config.general.cookie_path);
-    configStore.setGlobalArgs(configStore.config.general.global_args);
     configStore.setUpdateYtdlp(configStore.config.general.update_ytdlp);
   }
 }
@@ -70,24 +91,11 @@ function resetSettings() {
             </n-space>
           </div>
 
-          <div>
-            <label class="label">Global Arguments:</label>
-            <n-input
-              v-model:value="configStore.globalArgs"
-              type="textarea"
-              placeholder="Enter yt-dlp global arguments"
-              :rows="4"
-            />
-          </div>
-
-          <div>
-            <label class="label">Auto Update yt-dlp:</label>
-            <n-select
-              v-model:value="configStore.updateYtdlp"
-              :options="[
-                { label: 'Enabled', value: true },
-                { label: 'Disabled', value: false }
-              ]"
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <label class="label" style="margin-bottom: 0">Auto Update yt-dlp:</label>
+            <n-switch
+              :value="configStore.updateYtdlp === 'true'"
+              @update:value="(val) => configStore.setUpdateYtdlp(val ? 'true' : 'false')"
             />
           </div>
         </n-space>

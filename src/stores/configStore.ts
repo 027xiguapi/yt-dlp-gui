@@ -53,17 +53,17 @@ export const useConfigStore = defineStore('config', () => {
       },
     }
 
-    try {
-      await invoke('save_config', {
-        path: 'config.toml',
-        config: updatedConfig,
-      })
-      config.value = updatedConfig
-      return true
-    } catch (error) {
-      console.error('Failed to save config:', error)
-      throw error
-    }
+    // try {
+    //   await invoke('save_config', {
+    //     path: 'config.toml',
+    //     config: updatedConfig,
+    //   })
+    //   config.value = updatedConfig
+    //   return true
+    // } catch (error) {
+    //   console.error('Failed to save config:', error)
+    //   throw error
+    // }
   }
 
   function setDownloadPath(path: string) {

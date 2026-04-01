@@ -13,6 +13,7 @@ export interface DownloadTask {
   eta: string
   size: string
   title: string
+  error: any
 }
 
 const STORAGE_KEY = 'yt-dlp-downloads'

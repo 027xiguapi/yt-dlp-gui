@@ -142,17 +142,21 @@ async fn start_download(
             .arg(&path);
 
         // --cookies 和 --cookies-from-browser 互斥，优先使用 cookie 文件
-        // 优先使用浏览器 cookie，否则使用 cookie 文件
-        let browser_active = cookies_from_browser.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
-        let cookie_file_active = !browser_active && cookie_path.as_deref().map(|s| !s.is_empty()).unwrap_or(false);
+        // 当 browser 为 custom 时，强制使用 cookie 文件
+        let browser_val = cookies_from_browser.as_deref().unwrap_or_default();
+        let is_custom_browser = browser_val.eq_ignore_ascii_case("custom");
+
+        let browser_active = !is_custom_browser && !browser_val.is_empty();
+        let cookie_file_active = is_custom_browser || (!browser_active && cookie_path.as_deref().map(|s| !s.is_empty()).unwrap_or(false));
+
         if browser_active {
-            let browser = cookies_from_browser.as_deref().unwrap();
-            info!("Using cookies from browser: {}", browser);
-            cmd.arg("--cookies-from-browser").arg(browser);
+            info!("Using cookies from browser: {}", browser_val);
+            cmd.arg("--cookies-from-browser").arg(browser_val);
         } else if cookie_file_active {
-            let cookie_file = cookie_path.as_deref().unwrap();
-            info!("Using cookie file: {}", cookie_file);
-            cmd.arg("--cookies").arg(cookie_file);
+            if let Some(cookie_file) = cookie_path.as_deref() {
+                info!("Using cookie file: {}", cookie_file);
+                cmd.arg("--cookies").arg(cookie_file);
+            }
         }
 
         // 只有 YouTube 链接才附加 -f 格式参数

@@ -16,6 +16,13 @@ export interface Config {
 
 const STORAGE_KEY = 'yt-dlp-config'
 
+const VERSION_CHECKS = [
+  { key: 'ytdlp', cmd: 'yt-dlp', args: ['--version'] },
+  { key: 'deno', cmd: 'deno', args: ['--version'] },
+  { key: 'ffmpeg', cmd: 'ffmpeg', args: ['-version'] },
+  { key: 'ffprobe', cmd: 'ffprobe', args: ['-version'] }
+]
+
 export const useConfigStore = defineStore('config', () => {
   const config = ref<Config | null>(null)
   const downloadPath = ref('')
@@ -25,6 +32,12 @@ export const useConfigStore = defineStore('config', () => {
   const selectedPreset = ref('best')
   const globalArgs = ref('')
   const isLoading = ref(false)
+  const versions = ref({
+    ytdlp: '',
+    deno: '',
+    ffmpeg: '',
+    ffprobe: ''
+  })
 
   function loadFromStorage() {
     try {
@@ -127,6 +140,21 @@ export const useConfigStore = defineStore('config', () => {
     saveToStorage()
   }
 
+  async function checkVersions() {
+    for (const check of VERSION_CHECKS) {
+      try {
+        const output = await invoke<string>('check_version', {
+          cmd: check.cmd,
+          args: check.args,
+          ytdlp_path: ytdlpPath.value || config.value?.general.ytdlp_path
+        })
+        versions.value[check.key] = output.split('\n')[0] || '未找到'
+      } catch (error) {
+        versions.value[check.key] = '未安装或不在 PATH 中'
+      }
+    }
+  }
+
   return {
     config,
     downloadPath,
@@ -136,6 +164,7 @@ export const useConfigStore = defineStore('config', () => {
     selectedPreset,
     globalArgs,
     isLoading,
+    versions,
     loadConfig,
     saveConfig,
     setDownloadPath,
@@ -145,5 +174,6 @@ export const useConfigStore = defineStore('config', () => {
     setYtdlpPath,
     setSelectedPreset,
     setGlobalArgs,
+    checkVersions,
   }
 })

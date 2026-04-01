@@ -5,6 +5,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use uuid::Uuid;
 use log::{info, error, debug};
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadTask {
@@ -520,6 +521,88 @@ async fn sniff_youtube_resources(
     }
 }
 
+#[tauri::command]
+async fn check_version(cmd: String, args: Vec<String>, ytdlp_path: Option<String>) -> Result<String, String> {
+    let ytdlp_path_str = ytdlp_path.as_deref().unwrap_or_default();
+    info!(
+        "check_version called - cmd: {}, args: {:?}, ytdlp_path: {}",
+        cmd, args, ytdlp_path_str
+    );
+
+    let mut command = TokioCommand::new(&cmd);
+    command.args(&args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    info!("Executing: {} {}", cmd, args.join(" "));
+
+    match command.output().await {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+            if output.status.success() {
+                info!("Command succeeded: {}", stdout.trim());
+                return Ok(stdout.trim().to_string());
+            }
+        }
+        Err(e) => {
+            info!("Command failed: {}", e);
+        }
+    }
+
+    let exe_dir = Path::new(ytdlp_path_str)
+        .parent()
+        .ok_or_else(|| format!("Invalid ytdlp_path: {}", ytdlp_path_str))?;
+
+    let exe_dir_str = exe_dir.to_string_lossy().to_string();
+    info!("exe_dir: {}", exe_dir_str);
+
+    let fallback_paths = match cmd.as_str() {
+        "yt-dlp" => vec![ytdlp_path_str.to_string(), "yt-dlp".to_string()],
+        "deno" => vec![
+            exe_dir.join("deno.exe").to_string_lossy().to_string(),
+            "deno".to_string(),
+        ],
+        "ffmpeg" => vec![
+            exe_dir.join("ffmpeg.exe").to_string_lossy().to_string(),
+            "ffmpeg".to_string(),
+        ],
+        "ffprobe" => vec![
+            exe_dir.join("ffprobe.exe").to_string_lossy().to_string(),
+            "ffprobe".to_string(),
+        ],
+        _ => return Err(format!("Failed to execute {}", cmd)),
+    };
+
+    info!("fallback_paths: {:?}", fallback_paths);
+
+    for path in fallback_paths {
+        let mut fallback_cmd = TokioCommand::new(&path);
+        fallback_cmd.args(&args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+
+        info!("Trying fallback: {} {}", path, args.join(" "));
+
+        if let Ok(output) = fallback_cmd.output().await {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+            if output.status.success() {
+                info!("Fallback succeeded: {}", stdout.trim());
+                return Ok(stdout.trim().to_string());
+            } else if !stderr.is_empty() {
+                info!("Fallback stderr: {}", stderr.trim());
+                return Ok(stderr.trim().to_string());
+            }
+        }
+    }
+
+    error!("Failed to execute {} with args {:?}", cmd, args);
+    Err(format!("Failed to execute {}", cmd))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_default_env()
@@ -539,6 +622,7 @@ pub fn run() {
             generate_task_id,
             extract_channel_urls,
             sniff_youtube_resources,
+            check_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import {
   NCard, NSpace, NButton, NInput,
   NForm, NFormItem, NIcon, NTooltip, NDivider, NSelect, useMessage
 } from "naive-ui";
-import { 
-  FolderOpen, FileText, Save, RotateCcw, 
-  Info, ShieldCheck, DownloadCloud 
+import {
+  FolderOpen, FileText, Save, RotateCcw,
+  Info, ShieldCheck, DownloadCloud, Terminal
 } from "@lucide/vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useConfigStore } from "../stores/configStore";
 
 const configStore = useConfigStore();
 const message = useMessage();
+
+const checking = ref(false);
 
 const browserOptions = [
   { label: "Chrome", value: "chrome" },
@@ -93,6 +95,12 @@ function resetSettings() {
     configStore.setCookiePath(configStore.config.general.cookie_path);
     configStore.setYtdlpPath(configStore.config.general.ytdlp_path || './win/yt-dlp.exe');
   }
+}
+
+async function checkVersions() {
+  checking.value = true;
+  await configStore.checkVersions();
+  checking.value = false;
 }
 </script>
 
@@ -184,6 +192,38 @@ function resetSettings() {
                 </n-input-group>
               </n-form-item>
               <p class="hint">{{ configStore.cookieBrowser === 'custom' ? '选择自定义 Cookie 文件' : '将从 ' + browserOptions.find(b => b.value === configStore.cookieBrowser)?.label + ' 浏览器获取 Cookie' }}</p>
+            </n-card>
+
+            <n-card title="环境变量测试" hoverable :segmented="{ content: true }">
+              <template #header-extra>
+                <n-icon size="20" color="#10b981" :component="Terminal" />
+              </template>
+
+              <n-space vertical :size="12">
+                <p class="hint">检查系统环境中的依赖工具版本</p>
+
+                <n-button type="primary" :loading="checking" @click="checkVersions">
+                  <template #icon><n-icon :component="Terminal" /></template>
+                  检测版本
+                </n-button>
+
+                <n-divider v-if="configStore.versions.ytdlp || configStore.versions.deno || configStore.versions.ffmpeg || configStore.versions.ffprobe" />
+
+                <n-space v-if="configStore.versions.ytdlp || configStore.versions.deno || configStore.versions.ffmpeg || configStore.versions.ffprobe" vertical :size="8">
+                  <div v-if="configStore.versions.ytdlp">
+                    <strong>yt-dlp:</strong> <span style="font-family: monospace; color: #666;">{{ configStore.versions.ytdlp }}</span>
+                  </div>
+                  <div v-if="configStore.versions.deno">
+                    <strong>deno:</strong> <span style="font-family: monospace; color: #666;">{{ configStore.versions.deno }}</span>
+                  </div>
+                  <div v-if="configStore.versions.ffmpeg">
+                    <strong>ffmpeg:</strong> <span style="font-family: monospace; color: #666;">{{ configStore.versions.ffmpeg }}</span>
+                  </div>
+                  <div v-if="configStore.versions.ffprobe">
+                    <strong>ffprobe:</strong> <span style="font-family: monospace; color: #666;">{{ configStore.versions.ffprobe }}</span>
+                  </div>
+                </n-space>
+              </n-space>
             </n-card>
           </n-form>
 

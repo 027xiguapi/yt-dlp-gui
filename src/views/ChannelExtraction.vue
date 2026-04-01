@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { NButton, NInput, NCard, NSpace, NProgress, NEmpty, NIcon } from "naive-ui";
+import { NButton, NInput, NCard, NSpace, NProgress, NEmpty } from "naive-ui";
 import { useChannelStore } from "../stores/channelStore";
 import { useDownloadStore } from "../stores/downloadStore";
 import { useConfigStore } from "../stores/configStore";
@@ -60,7 +60,7 @@ async function addExtractedUrlsToQueue() {
           />
           <n-button
             type="primary"
-            @click="() => channelStore.extractChannelUrls(channelStore.channelUrl)"
+            @click="() => channelStore.extractChannelUrls(channelStore.channelUrl, configStore.ytdlpPath || undefined)"
             :loading="channelStore.isExtracting"
             block
           >

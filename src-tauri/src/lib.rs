@@ -290,11 +290,14 @@ fn generate_task_id() -> String {
 async fn extract_channel_urls(
     channel_url: String,
     window: tauri::Window,
+    ytdlp_path: Option<String>,
     app_handle: tauri::AppHandle,
 ) -> Result<ChannelExtractionResult, String> {
     info!("Starting channel extraction for URL: {}", channel_url);
 
-    let ytdlp_path = std::path::PathBuf::from("./win/yt-dlp.exe");
+    let ytdlp_path = std::path::PathBuf::from(
+        ytdlp_path.unwrap_or_else(|| "./win/yt-dlp.exe".to_string())
+    );
 
     let mut cmd = TokioCommand::new(&ytdlp_path);
     cmd.arg("--flat-playlist")

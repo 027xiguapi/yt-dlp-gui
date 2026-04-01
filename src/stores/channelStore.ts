@@ -45,7 +45,7 @@ export const useChannelStore = defineStore('channel', () => {
     }
   }
 
-  async function extractChannelUrls(url: string) {
+  async function extractChannelUrls(url: string, ytdlpPath?: string) {
     if (!url.trim()) {
       error.value = 'Please enter a YouTube channel URL'
       return false
@@ -60,6 +60,7 @@ export const useChannelStore = defineStore('channel', () => {
     try {
       const result = await invoke<any>('extract_channel_urls', {
         channelUrl: url,
+        ytdlpPath: ytdlpPath || null,
       })
       extractedUrls.value = result.urls
       extractedChannelName.value = result.channel_name

@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   NButton, NInput, NCard, NSpace, NProgress,
-  NIcon, NTag, NDataTable, NPopconfirm, useMessage
+  NIcon, NTag, NDataTable, NPopconfirm, NTooltip, useMessage
 } from "naive-ui";
 import { Trash2, Copy, Play, CheckCircle2, FolderOpen } from "@lucide/vue";
 import { useConfigStore } from "../stores/configStore";
@@ -30,6 +30,7 @@ onMounted(async () => {
       eta: data.eta,
       size: data.size,
       title: data.title,
+      error: data.error,
     });
   });
 });
@@ -81,7 +82,7 @@ async function runDownloadTask(task: any) {
       task,
       cookiePath: configStore.cookiePath || null,
       ytdlpPath: configStore.ytdlpPath || null,
-      cookiesFromBrowser: "chrome"
+      cookiesFromBrowser: configStore.cookieBrowser || null,
     });
   } catch (error) {
     console.error(`下载启动失败 ${task.id}:`, error);
@@ -156,7 +157,14 @@ const columns = [
     key: 'status',
     width: 120,
     render(row: any) {
-      return h(NTag, { type: getStatusType(row.status), bordered: false }, { default: () => row.status });
+      const tag = h(NTag, { type: getStatusType(row.status), bordered: false }, { default: () => row.status });
+      if (row.status === 'ERROR' && row.error) {
+        return h(NTooltip, { trigger: 'hover' }, {
+          trigger: () => tag,
+          default: () => row.error,
+        });
+      }
+      return tag;
     }
   },
   {

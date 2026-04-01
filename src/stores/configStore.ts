@@ -20,6 +20,7 @@ export const useConfigStore = defineStore('config', () => {
   const config = ref<Config | null>(null)
   const downloadPath = ref('')
   const cookiePath = ref('')
+  const cookieBrowser = ref('chrome')
   const ytdlpPath = ref('')
   const selectedPreset = ref('best')
   const globalArgs = ref('')
@@ -32,6 +33,7 @@ export const useConfigStore = defineStore('config', () => {
         const data = JSON.parse(stored)
         downloadPath.value = data.downloadPath || ''
         cookiePath.value = data.cookiePath || ''
+        cookieBrowser.value = data.cookieBrowser || 'chrome'
         ytdlpPath.value = data.ytdlpPath || ''
         selectedPreset.value = data.selectedPreset || 'best'
         globalArgs.value = data.globalArgs || ''
@@ -46,6 +48,7 @@ export const useConfigStore = defineStore('config', () => {
       const data = {
         downloadPath: downloadPath.value,
         cookiePath: cookiePath.value,
+        cookieBrowser: cookieBrowser.value,
         ytdlpPath: ytdlpPath.value,
         selectedPreset: selectedPreset.value,
         globalArgs: globalArgs.value,
@@ -99,6 +102,11 @@ export const useConfigStore = defineStore('config', () => {
     saveToStorage()
   }
 
+  function setCookieBrowser(browser: string) {
+    cookieBrowser.value = browser
+    saveToStorage()
+  }
+
   function clearCookiePath() {
     cookiePath.value = ''
     saveToStorage()
@@ -123,6 +131,7 @@ export const useConfigStore = defineStore('config', () => {
     config,
     downloadPath,
     cookiePath,
+    cookieBrowser,
     ytdlpPath,
     selectedPreset,
     globalArgs,
@@ -131,6 +140,7 @@ export const useConfigStore = defineStore('config', () => {
     saveConfig,
     setDownloadPath,
     setCookiePath,
+    setCookieBrowser,
     clearCookiePath,
     setYtdlpPath,
     setSelectedPreset,

@@ -45,10 +45,18 @@ async function addUrls() {
   const urls = urlInput.value
     .split("\n")
     .map(u => u.trim())
-    .filter(u => u && (u.includes("youtube.com") || u.includes("youtu.be")));
+    .filter(u => {
+      if (!u) return false;
+      try {
+        new URL(u);
+        return true;
+      } catch {
+        return false;
+      }
+    });
 
   if (urls.length === 0) {
-    message.error("未发现有效的 YouTube 链接");
+    message.error("未发现有效的链接");
     return;
   }
 
@@ -72,7 +80,8 @@ async function runDownloadTask(task: any) {
     await invoke("start_download", {
       task,
       cookiePath: configStore.cookiePath || null,
-      ytdlpPath: configStore.ytdlpPath || null
+      ytdlpPath: configStore.ytdlpPath || null,
+      cookiesFromBrowser: "chrome"
     });
   } catch (error) {
     console.error(`下载启动失败 ${task.id}:`, error);

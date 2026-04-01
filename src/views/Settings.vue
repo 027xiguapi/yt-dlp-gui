@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { 
-  NCard, NSpace, NButton, NInput, NSwitch, NAlert, 
-  NForm, NFormItem, NIcon, NTooltip, NDivider 
+import { onMounted } from "vue";
+import {
+  NCard, NSpace, NButton, NInput,
+  NForm, NFormItem, NIcon, NTooltip, NDivider, NSelect, useMessage
 } from "naive-ui";
 import { 
   FolderOpen, FileText, Save, RotateCcw, 
@@ -12,8 +12,16 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useConfigStore } from "../stores/configStore";
 
 const configStore = useConfigStore();
-const saveMessage = ref("");
-const saveStatus = ref<"success" | "error" | "">("");
+const message = useMessage();
+
+const browserOptions = [
+  { label: "Chrome", value: "chrome" },
+  { label: "Firefox", value: "firefox" },
+  { label: "Edge", value: "edge" },
+  { label: "Safari", value: "safari" },
+  { label: "Opera", value: "opera" },
+  { label: "自定义文件", value: "custom" }
+];
 
 onMounted(async () => {
   await configStore.loadConfig();
@@ -73,14 +81,9 @@ async function selectYtdlpFile() {
 async function saveSettings() {
   try {
     await configStore.saveConfig();
-    saveStatus.value = "success";
-    saveMessage.value = "配置已成功保存到本地！";
-    setTimeout(() => {
-      saveMessage.value = "";
-    }, 3000);
+    message.success("配置已成功保存到本地！");
   } catch (error) {
-    saveStatus.value = "error";
-    saveMessage.value = `保存失败: ${error}`;
+    message.error(`保存失败: ${error}`);
   }
 }
 
@@ -108,12 +111,6 @@ function resetSettings() {
 
       <main class="settings-content">
         <n-space vertical :size="20">
-          <transition name="fade">
-            <n-alert v-if="saveMessage" :type="saveStatus || 'success'" closable shadow>
-              {{ saveMessage }}
-            </n-alert>
-          </transition>
-
           <n-form label-placement="top">
             <n-card title="下载配置" hoverable :segmented="{ content: true }">
               <template #header-extra>
@@ -151,7 +148,15 @@ function resetSettings() {
 
               <n-divider />
 
-              <n-form-item>
+              <n-form-item label="Cookie 来源">
+                <n-select
+                  v-model:value="configStore.cookieBrowser"
+                  :options="browserOptions"
+                  @update:value="configStore.setCookieBrowser"
+                />
+              </n-form-item>
+
+              <n-form-item v-if="configStore.cookieBrowser === 'custom'">
                 <template #label>
                   <n-space :size="4" align="center">
                     <span>Cookie 文件路径</span>
@@ -163,7 +168,7 @@ function resetSettings() {
                     </n-tooltip>
                   </n-space>
                 </template>
-                
+
                 <n-input-group>
                   <n-input
                     v-model:value="configStore.cookiePath"
@@ -178,7 +183,7 @@ function resetSettings() {
                   </n-button>
                 </n-input-group>
               </n-form-item>
-              <p class="hint">如果不配置，程序将尝试从系统默认浏览器获取授权。</p>
+              <p class="hint">{{ configStore.cookieBrowser === 'custom' ? '选择自定义 Cookie 文件' : '将从 ' + browserOptions.find(b => b.value === configStore.cookieBrowser)?.label + ' 浏览器获取 Cookie' }}</p>
             </n-card>
           </n-form>
 

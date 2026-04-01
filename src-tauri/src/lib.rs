@@ -99,6 +99,7 @@ async fn start_download(
     window: tauri::Window,
     cookie_path: Option<String>,
     ytdlp_path: Option<String>,
+    cookies_from_browser: Option<String>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let task_id = task.id.clone();
@@ -145,6 +146,14 @@ async fn start_download(
             }
         }
 
+        // Add cookies from browser if provided
+        if let Some(ref browser) = cookies_from_browser {
+            if !browser.is_empty() {
+                info!("Using cookies from browser: {}", browser);
+                cmd.arg("--cookies-from-browser").arg(browser);
+            }
+        }
+
         cmd.arg("-f")
             .arg(&preset)
             .arg(&url)
@@ -166,6 +175,13 @@ async fn start_download(
             if !cookie_file.is_empty() {
                 cmd_args.push("--cookies".to_string());
                 cmd_args.push(cookie_file.clone());
+            }
+        }
+
+        if let Some(ref browser) = cookies_from_browser {
+            if !browser.is_empty() {
+                cmd_args.push("--cookies-from-browser".to_string());
+                cmd_args.push(browser.clone());
             }
         }
 

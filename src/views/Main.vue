@@ -242,7 +242,7 @@ const columns = [
   <div class="main-container">
     <n-space vertical :size="20" style="padding: 24px">
       <div class="app-header">
-        <h1 class="title">YouTube 下载管理器</h1>
+        <h1 class="title">视频、音乐下载管理器</h1>
         <p class="subtitle">高性能下载引擎</p>
       </div>
 
@@ -251,7 +251,7 @@ const columns = [
           <n-input
             v-model:value="urlInput"
             type="textarea"
-            placeholder="在此粘贴 YouTube 链接（支持多行粘贴）"
+            placeholder="在此粘贴视频、音乐链接（支持多行粘贴）"
             :autosize="{ minRows: 3, maxRows: 6 }"
           />
           <n-button type="primary" size="large" @click="addUrls" block>

@@ -52,6 +52,24 @@ async function selectCookieFile() {
   }
 }
 
+async function selectYtdlpFile() {
+  try {
+    const selected = await open({
+      multiple: false,
+      title: "选择 yt-dlp 可执行文件",
+      filters: [
+        { name: "Executable Files", extensions: ["exe"] },
+        { name: "All Files", extensions: ["*"] }
+      ]
+    });
+    if (selected && typeof selected === "string") {
+      configStore.setYtdlpPath(selected);
+    }
+  } catch (error) {
+    console.error("Failed to select file:", error);
+  }
+}
+
 async function saveSettings() {
   try {
     await configStore.saveConfig();
@@ -70,111 +88,115 @@ function resetSettings() {
   if (configStore.config) {
     configStore.setDownloadPath(configStore.config.general.path);
     configStore.setCookiePath(configStore.config.general.cookie_path);
-    configStore.setUpdateYtdlp(configStore.config.general.update_ytdlp);
+    configStore.setYtdlpPath(configStore.config.general.ytdlp_path || './win/yt-dlp.exe');
   }
 }
 </script>
 
 <template>
   <div class="settings-container">
-    <header class="settings-header">
-      <div class="header-content">
-        <n-icon size="28" :component="DownloadCloud" />
-        <div class="header-text">
-          <h1>软件设置</h1>
-          <span>管理下载偏好、核心引擎及身份验证</span>
+    <n-space vertical :size="20" style="padding: 24px">
+      <header class="settings-header">
+        <div class="header-content">
+          <n-icon size="28" :component="DownloadCloud" />
+          <div class="header-text">
+            <h1>软件设置</h1>
+            <span>管理下载偏好、核心引擎及身份验证</span>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main class="settings-content">
-      <n-space vertical :size="20">
-        <transition name="fade">
-          <n-alert v-if="saveMessage" :type="saveStatus || 'success'" closable shadow>
-            {{ saveMessage }}
-          </n-alert>
-        </transition>
+      <main class="settings-content">
+        <n-space vertical :size="20">
+          <transition name="fade">
+            <n-alert v-if="saveMessage" :type="saveStatus || 'success'" closable shadow>
+              {{ saveMessage }}
+            </n-alert>
+          </transition>
 
-        <n-form label-placement="top">
-          <n-card title="下载配置" hoverable :segmented="{ content: true }">
-            <template #header-extra>
-              <n-icon size="20" color="#3b82f6" :component="ShieldCheck" />
-            </template>
-            
-            <n-form-item label="默认下载路径">
-              <n-input-group>
-                <n-input 
-                  v-model:value="configStore.downloadPath" 
-                  placeholder="点击右侧按钮选择路径" 
-                  readonly 
-                />
-                <n-button type="primary" secondary @click="selectFolder">
-                  <template #icon><n-icon :component="FolderOpen" /></template>
-                  浏览
-                </n-button>
-              </n-input-group>
-            </n-form-item>
-
-            <n-divider />
-
-            <div class="setting-row">
-              <div class="row-info">
-                <span class="row-label">自动更新 yt-dlp</span>
-                <span class="row-desc">开启后每次启动程序将检查并更新下载引擎</span>
-              </div>
-              <n-switch
-                :value="configStore.updateYtdlp === 'true'"
-                @update:value="(val) => configStore.setUpdateYtdlp(val ? 'true' : 'false')"
-              />
-            </div>
-          </n-card>
-
-          <n-card title="身份验证 (Cookies)" hoverable style="margin-top: 16px">
-            <n-form-item>
-              <template #label>
-                <n-space :size="4" align="center">
-                  <span>Cookie 文件路径</span>
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <n-icon :component="Info" color="#999" />
-                    </template>
-                    使用 Cookie 可以下载会员视频或绕过限制
-                  </n-tooltip>
-                </n-space>
+          <n-form label-placement="top">
+            <n-card title="下载配置" hoverable :segmented="{ content: true }">
+              <template #header-extra>
+                <n-icon size="20" color="#3b82f6" :component="ShieldCheck" />
               </template>
               
-              <n-input-group>
-                <n-input
-                  v-model:value="configStore.cookiePath"
-                  placeholder="cookies.txt 绝对路径"
-                />
-                <n-button @click="selectCookieFile">
-                  <template #icon><n-icon :component="FileText" /></template>
-                  选择
-                </n-button>
-                <n-button v-if="configStore.cookiePath" type="error" ghost @click="configStore.clearCookiePath">
-                  清除
-                </n-button>
-              </n-input-group>
-            </n-form-item>
-            <p class="hint">如果不配置，程序将尝试从系统默认浏览器获取授权。</p>
-          </n-card>
-        </n-form>
+              <n-form-item label="默认下载路径">
+                <n-input-group>
+                  <n-input 
+                    v-model:value="configStore.downloadPath" 
+                    placeholder="点击右侧按钮选择路径" 
+                    readonly 
+                  />
+                  <n-button type="primary" secondary @click="selectFolder">
+                    <template #icon><n-icon :component="FolderOpen" /></template>
+                    浏览
+                  </n-button>
+                </n-input-group>
+              </n-form-item>
 
-        <div class="actions-bar">
-          <n-space justify="end" :size="12">
-            <n-button strong secondary @click="resetSettings">
-              <template #icon><n-icon :component="RotateCcw" /></template>
-              重置
-            </n-button>
-            <n-button strong type="primary" size="large" @click="saveSettings">
-              <template #icon><n-icon :component="Save" /></template>
-              保存更改
-            </n-button>
-          </n-space>
-        </div>
-      </n-space>
-    </main>
+              <n-divider />
+
+              <n-form-item label="yt-dlp 可执行文件路径">
+                <n-input-group>
+                  <n-input
+                    v-model:value="configStore.ytdlpPath"
+                    placeholder="yt-dlp.exe 绝对路径或相对路径"
+                  />
+                  <n-button @click="selectYtdlpFile">
+                    <template #icon><n-icon :component="FileText" /></template>
+                    选择
+                  </n-button>
+                </n-input-group>
+              </n-form-item>
+
+              <n-divider />
+
+              <n-form-item>
+                <template #label>
+                  <n-space :size="4" align="center">
+                    <span>Cookie 文件路径</span>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-icon :component="Info" color="#999" />
+                      </template>
+                      使用 Cookie 可以下载会员视频或绕过限制
+                    </n-tooltip>
+                  </n-space>
+                </template>
+                
+                <n-input-group>
+                  <n-input
+                    v-model:value="configStore.cookiePath"
+                    placeholder="cookies.txt 绝对路径"
+                  />
+                  <n-button @click="selectCookieFile">
+                    <template #icon><n-icon :component="FileText" /></template>
+                    选择
+                  </n-button>
+                  <n-button v-if="configStore.cookiePath" type="error" ghost @click="configStore.clearCookiePath">
+                    清除
+                  </n-button>
+                </n-input-group>
+              </n-form-item>
+              <p class="hint">如果不配置，程序将尝试从系统默认浏览器获取授权。</p>
+            </n-card>
+          </n-form>
+
+          <div class="actions-bar">
+            <n-space justify="end" :size="12">
+              <n-button strong secondary @click="resetSettings">
+                <template #icon><n-icon :component="RotateCcw" /></template>
+                重置
+              </n-button>
+              <n-button strong type="primary" size="large" @click="saveSettings">
+                <template #icon><n-icon :component="Save" /></template>
+                保存更改
+              </n-button>
+            </n-space>
+          </div>
+        </n-space>
+      </main>
+    </n-space>
   </div>
 </template>
 

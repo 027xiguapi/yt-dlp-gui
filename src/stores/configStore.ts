@@ -9,6 +9,7 @@ export interface Config {
     global_args: string
     update_ytdlp: boolean
     cookie_path: string
+    ytdlp_path: string
   }
   presets: Record<string, string>
 }
@@ -19,9 +20,9 @@ export const useConfigStore = defineStore('config', () => {
   const config = ref<Config | null>(null)
   const downloadPath = ref('')
   const cookiePath = ref('')
+  const ytdlpPath = ref('')
   const selectedPreset = ref('best')
   const globalArgs = ref('')
-  const updateYtdlp = ref('true')
   const isLoading = ref(false)
 
   function loadFromStorage() {
@@ -31,9 +32,9 @@ export const useConfigStore = defineStore('config', () => {
         const data = JSON.parse(stored)
         downloadPath.value = data.downloadPath || ''
         cookiePath.value = data.cookiePath || ''
+        ytdlpPath.value = data.ytdlpPath || ''
         selectedPreset.value = data.selectedPreset || 'best'
         globalArgs.value = data.globalArgs || ''
-        updateYtdlp.value = data.updateYtdlp || 'true'
       }
     } catch (error) {
       console.error('Failed to load from localStorage:', error)
@@ -45,9 +46,9 @@ export const useConfigStore = defineStore('config', () => {
       const data = {
         downloadPath: downloadPath.value,
         cookiePath: cookiePath.value,
+        ytdlpPath: ytdlpPath.value,
         selectedPreset: selectedPreset.value,
         globalArgs: globalArgs.value,
-        updateYtdlp: updateYtdlp.value,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch (error) {
@@ -66,6 +67,9 @@ export const useConfigStore = defineStore('config', () => {
       }
       if (!cookiePath.value) {
         cookiePath.value = defaultConfig.general.cookie_path
+      }
+      if (!ytdlpPath.value) {
+        ytdlpPath.value = defaultConfig.general.ytdlp_path || './win/yt-dlp.exe'
       }
       if (!selectedPreset.value) {
         selectedPreset.value = Object.keys(defaultConfig.presets)[defaultConfig.general.current_preset] || 'best'
@@ -100,6 +104,11 @@ export const useConfigStore = defineStore('config', () => {
     saveToStorage()
   }
 
+  function setYtdlpPath(path: string) {
+    ytdlpPath.value = path
+    saveToStorage()
+  }
+
   function setSelectedPreset(preset: string) {
     selectedPreset.value = preset
     saveToStorage()
@@ -110,26 +119,21 @@ export const useConfigStore = defineStore('config', () => {
     saveToStorage()
   }
 
-  function setUpdateYtdlp(value: string | boolean) {
-    updateYtdlp.value = typeof value === 'string' ? value : (value ? 'true' : 'false')
-    saveToStorage()
-  }
-
   return {
     config,
     downloadPath,
     cookiePath,
+    ytdlpPath,
     selectedPreset,
     globalArgs,
-    updateYtdlp,
     isLoading,
     loadConfig,
     saveConfig,
     setDownloadPath,
     setCookiePath,
     clearCookiePath,
+    setYtdlpPath,
     setSelectedPreset,
     setGlobalArgs,
-    setUpdateYtdlp,
   }
 })

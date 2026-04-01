@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use uuid::Uuid;
+use log::{info, error, debug};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadTask {
@@ -11,11 +12,17 @@ pub struct DownloadTask {
     pub url: String,
     pub preset: String,
     pub path: String,
+    #[serde(default)]
     pub status: String,
+    #[serde(default)]
     pub progress: f32,
+    #[serde(default)]
     pub speed: String,
+    #[serde(default)]
     pub eta: String,
+    #[serde(default)]
     pub size: String,
+    #[serde(default)]
     pub title: String,
 }
 
@@ -91,6 +98,8 @@ async fn start_download(
     task: DownloadTask,
     window: tauri::Window,
     cookie_path: Option<String>,
+    ytdlp_path: Option<String>,
+    app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let task_id = task.id.clone();
     let task_id_clone = task_id.clone();
@@ -98,8 +107,28 @@ async fn start_download(
     let preset = task.preset.clone();
     let path = task.path.clone();
 
+    info!("Starting download task - ID: {}, URL: {}, Preset: {}, Path: {}", task_id, url, preset, path);
+
     tokio::spawn(async move {
-        let mut cmd = TokioCommand::new("yt-dlp");
+        let ytdlp_path = std::path::PathBuf::from(
+            ytdlp_path.unwrap_or_else(|| "D:/monorepo/yt-dlp-gui/win/yt-dlp.exe".to_string())
+        );
+        info!("Executing yt-dlp from: {}", ytdlp_path.display());
+
+        // Check if file exists
+        if ytdlp_path.exists() {
+            info!("yt-dlp.exe found at: {}", ytdlp_path.display());
+        } else {
+            error!("yt-dlp.exe NOT found at: {}", ytdlp_path.display());
+            // Try absolute path
+            if let Ok(current_dir) = std::env::current_dir() {
+                error!("Current working directory: {}", current_dir.display());
+                let abs_path = current_dir.join(&ytdlp_path);
+                error!("Absolute path would be: {}", abs_path.display());
+            }
+        }
+
+        let mut cmd = TokioCommand::new(&ytdlp_path);
         cmd.arg("--newline")
             .arg("--no-simulate")
             .arg("--progress")
@@ -109,20 +138,46 @@ async fn start_download(
             .arg(&path);
 
         // Add cookie file if provided
-        if let Some(cookie_file) = cookie_path {
+        if let Some(ref cookie_file) = cookie_path {
             if !cookie_file.is_empty() {
-                cmd.arg("--cookies").arg(&cookie_file);
+                info!("Using cookie file: {}", cookie_file);
+                cmd.arg("--cookies").arg(cookie_file);
             }
         }
 
-        cmd.arg(&preset)
-            .arg("--")
+        cmd.arg("-f")
+            .arg(&preset)
             .arg(&url)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
+        // Log the complete command
+        let mut cmd_args = vec![
+            "--newline".to_string(),
+            "--no-simulate".to_string(),
+            "--progress".to_string(),
+            "--progress-template".to_string(),
+            "%(progress.status)s__SEP__%(progress._total_bytes_estimate_str)s__SEP__%(progress._percent_str)s__SEP__%(progress._speed_str)s__SEP__%(progress._eta_str)s__SEP__%(info.title)s".to_string(),
+            "-P".to_string(),
+            path.clone(),
+        ];
+
+        if let Some(ref cookie_file) = cookie_path {
+            if !cookie_file.is_empty() {
+                cmd_args.push("--cookies".to_string());
+                cmd_args.push(cookie_file.clone());
+            }
+        }
+
+        cmd_args.push("-f".to_string());
+        cmd_args.push(preset.clone());
+        cmd_args.push(url.clone());
+
+        info!("Executing command: {} {}", ytdlp_path.display(), cmd_args.join(" "));
+
         match cmd.spawn() {
             Ok(mut child) => {
+                info!("yt-dlp process spawned successfully for task: {}", task_id_clone);
                 if let Some(stdout) = child.stdout.take() {
                     let reader = BufReader::new(stdout);
                     let mut lines = reader.lines();
@@ -131,6 +186,8 @@ async fn start_download(
                         if line.contains("__SEP__") {
                             let parts: Vec<&str> = line.split("__SEP__").collect();
                             if parts.len() >= 6 {
+                                debug!("Progress update - Size: {}, Progress: {}, Speed: {}, ETA: {}",
+                                    parts[1].trim(), parts[2].trim(), parts[3].trim(), parts[4].trim());
                                 let progress_data = serde_json::json!({
                                     "id": task_id_clone.clone(),
                                     "status": "Downloading",
@@ -144,6 +201,7 @@ async fn start_download(
                             }
                         } else if line.starts_with("[Merger]") || line.starts_with("[ExtractAudio]")
                         {
+                            info!("Converting file for task: {}", task_id_clone);
                             let _ = window.emit(
                                 "download_progress",
                                 serde_json::json!({
@@ -159,6 +217,7 @@ async fn start_download(
                 match status {
                     Ok(exit_status) => {
                         if exit_status.success() {
+                            info!("Download completed successfully for task: {}", task_id_clone);
                             let _ = window.emit(
                                 "download_progress",
                                 serde_json::json!({
@@ -168,6 +227,7 @@ async fn start_download(
                                 }),
                             );
                         } else {
+                            error!("Download failed with non-zero exit code for task: {}", task_id_clone);
                             let _ = window.emit(
                                 "download_progress",
                                 serde_json::json!({
@@ -178,6 +238,7 @@ async fn start_download(
                         }
                     }
                     Err(e) => {
+                        error!("Download process error for task {}: {}", task_id_clone, e);
                         let _ = window.emit(
                             "download_progress",
                             serde_json::json!({
@@ -229,8 +290,13 @@ fn generate_task_id() -> String {
 async fn extract_channel_urls(
     channel_url: String,
     window: tauri::Window,
+    app_handle: tauri::AppHandle,
 ) -> Result<ChannelExtractionResult, String> {
-    let mut cmd = TokioCommand::new("yt-dlp");
+    info!("Starting channel extraction for URL: {}", channel_url);
+
+    let ytdlp_path = std::path::PathBuf::from("./win/yt-dlp.exe");
+
+    let mut cmd = TokioCommand::new(&ytdlp_path);
     cmd.arg("--flat-playlist")
         .arg("--dump-json")
         .arg("--no-warnings")
@@ -240,6 +306,7 @@ async fn extract_channel_urls(
 
     match cmd.spawn() {
         Ok(mut child) => {
+            info!("yt-dlp process spawned for channel extraction");
             let mut urls = Vec::new();
             let mut channel_name = String::new();
 
@@ -303,8 +370,13 @@ async fn extract_channel_urls(
 async fn sniff_youtube_resources(
     video_url: String,
     window: tauri::Window,
+    app_handle: tauri::AppHandle,
 ) -> Result<(Vec<CapturedResource>, Vec<CapturedResource>), String> {
-    let mut cmd = TokioCommand::new("yt-dlp");
+    info!("Starting resource sniffing for URL: {}", video_url);
+
+    let ytdlp_path = std::path::PathBuf::from("./win/yt-dlp.exe");
+
+    let mut cmd = TokioCommand::new(&ytdlp_path);
     cmd.arg("--dump-json")
         .arg("--no-warnings")
         .arg(&video_url)
@@ -313,6 +385,7 @@ async fn sniff_youtube_resources(
 
     match cmd.spawn() {
         Ok(mut child) => {
+            info!("yt-dlp process spawned for resource sniffing");
             let mut videos = Vec::new();
             let mut images = Vec::new();
 
@@ -397,6 +470,12 @@ async fn sniff_youtube_resources(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Info)
+        .init();
+
+    info!("Starting Tauri application");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

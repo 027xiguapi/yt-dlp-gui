@@ -33,4 +33,6 @@ toml = "0.8"
 uuid = { version = "1", features = ["v4", "serde"] }
 regex = "1"
 dirs = "5"
+log = "0.4"
+env_logger = "0.11"
 

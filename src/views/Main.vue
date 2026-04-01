@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, h, computed } from "vue";
+import { ref, onMounted, h } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { 
-  NButton, NInput, NCard, NSpace, NProgress, NEmpty, 
-  NIcon, NTag, NDataTable, NPopconfirm, useMessage 
+import {
+  NButton, NInput, NCard, NSpace, NProgress,
+  NIcon, NTag, NDataTable, NPopconfirm, useMessage
 } from "naive-ui";
-import { Trash2, Copy, Play, CheckCircle2 } from "@lucide/vue";
+import { Trash2, Copy, Play, CheckCircle2, FolderOpen } from "@lucide/vue";
 import { useConfigStore } from "../stores/configStore";
 import { useDownloadStore } from "../stores/downloadStore";
 
@@ -54,18 +54,25 @@ async function addUrls() {
 
   await downloadStore.addMultipleTasks(urls, configStore.selectedPreset, configStore.downloadPath);
   urlInput.value = "";
-  message.success(`成功添加 ${urls.length} 个任务`);
+  message.success(`成功添加 ${urls.length} 个任务，开始下载...`);
+
+  // 自动批量下载新添加的任务
+  const newTasks = downloadStore.taskList.filter(t => t.status === "Queued");
+  for (const task of newTasks) {
+    await runDownloadTask(task);
+  }
 }
 
 // 执行单个下载任务
 async function runDownloadTask(task: any) {
   if (task.status !== "Queued" && task.status !== "ERROR") return;
-  
+
   downloadStore.updateTask(task.id, { status: "Processing" });
   try {
-    await invoke("start_download", { 
-      task, 
-      cookiePath: configStore.cookiePath || null 
+    await invoke("start_download", {
+      task,
+      cookiePath: configStore.cookiePath || null,
+      ytdlpPath: configStore.ytdlpPath || null
     });
   } catch (error) {
     console.error(`下载启动失败 ${task.id}:`, error);
@@ -100,6 +107,14 @@ async function copyUrl(url: string) {
   }
 }
 
+async function openDownloadFolder() {
+  try {
+    await invoke("plugin:opener|open", { path: configStore.downloadPath });
+  } catch (err) {
+    message.error("打开文件夹失败");
+  }
+}
+
 function getStatusType(status: string) {
   switch (status) {
     case "Finished": return "success";
@@ -120,9 +135,11 @@ const columns = [
   {
     title: '标题',
     key: 'title',
+    width: 160,
     ellipsis: { tooltip: true },
     render(row: any) {
-      return row.title || row.url;
+      const displayText = row.title || row.url;
+      return h('span', { title: displayText }, displayText);
     }
   },
   {
@@ -136,7 +153,7 @@ const columns = [
   {
     title: '进度',
     key: 'progress',
-    width: 160,
+    width: 100,
     render(row: any) {
       if (["Downloading", "Processing", "Converting"].includes(row.status)) {
         return h(NProgress, { 
@@ -163,8 +180,9 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 180,
+    width: 220,
     align: 'center' as const,
+    fixed: 'right' as const,
     render(row: any) {
       return h(NSpace, { justify: 'center' }, {
         default: () => [
@@ -176,14 +194,22 @@ const columns = [
             disabled: !["Queued", "ERROR"].includes(row.status),
             onClick: () => runDownloadTask(row)
           }, { default: () => h(NIcon, null, { default: () => h(Play) }) }),
-          
+
           // 复制按钮
           h(NButton, {
             quaternary: true,
             circle: true,
             onClick: () => copyUrl(row.url)
           }, { default: () => h(NIcon, null, { default: () => h(Copy) }) }),
-          
+
+          // 打开文件夹按钮
+          h(NButton, {
+            quaternary: true,
+            circle: true,
+            type: 'info',
+            onClick: () => openDownloadFolder()
+          }, { default: () => h(NIcon, null, { default: () => h(FolderOpen) }) }),
+
           // 删除按钮
           h(NPopconfirm, {
             onPositiveClick: () => {
@@ -191,8 +217,8 @@ const columns = [
               checkedRowKeys.value = checkedRowKeys.value.filter(k => k !== row.id);
             }
           }, {
-            trigger: () => h(NButton, { quaternary: true, circle: true, type: 'error' }, { 
-              default: () => h(NIcon, null, { default: () => h(Trash2) }) 
+            trigger: () => h(NButton, { quaternary: true, circle: true, type: 'error' }, {
+              default: () => h(NIcon, null, { default: () => h(Trash2) })
             }),
             default: () => '确定删除此任务吗？'
           })
@@ -208,7 +234,7 @@ const columns = [
     <n-space vertical :size="20" style="padding: 24px">
       <div class="app-header">
         <h1 class="title">YouTube 下载管理器</h1>
-        <p class="subtitle">Tauri + yt-dlp 高性能下载引擎</p>
+        <p class="subtitle">高性能下载引擎</p>
       </div>
 
       <n-card hoverable>

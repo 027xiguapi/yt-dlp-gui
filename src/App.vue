@@ -41,8 +41,8 @@ function handleMenuSelect(key: string) { router.push(key) }
           class="bg-white"
         >
           <div class="flex items-center gap-3 px-4 py-6 border-b border-gray-200">
-            <div class="flex items-center justify-center w-8 h-8 rounded-lg font-bold text-white bg-gradient-to-br from-blue-500 to-purple-500">YT</div>
-            <span class="text-lg font-bold text-gray-900">YT-DLP GUI</span>
+            <img src="/app-icon.png" alt="Video-DLP" class="w-8 h-8 rounded-lg" />
+            <span class="text-lg font-bold text-gray-900">Video-DLP GUI</span>
           </div>
           <n-menu
             :value="route.path"

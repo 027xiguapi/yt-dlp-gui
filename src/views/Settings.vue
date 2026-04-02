@@ -194,7 +194,7 @@ async function checkVersions() {
               <p class="hint">{{ configStore.cookieBrowser === 'custom' ? '选择自定义 Cookie 文件' : '将从 ' + browserOptions.find(b => b.value === configStore.cookieBrowser)?.label + ' 浏览器获取 Cookie' }}</p>
             </n-card>
 
-            <n-card title="环境变量测试" hoverable :segmented="{ content: true }">
+            <n-card title="环境变量测试" hoverable :segmented="{ content: true }" class="mt-5">
               <template #header-extra>
                 <n-icon size="20" color="#10b981" :component="Terminal" />
               </template>

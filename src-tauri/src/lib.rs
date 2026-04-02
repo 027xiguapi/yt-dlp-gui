@@ -1,10 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tauri::{Emitter, Manager};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{TrayIconBuilder, TrayIconEvent, MouseButton},
+    Emitter, Manager,
+};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use uuid::Uuid;
-use log::{info, error, debug};
+use log::{info, error};
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,7 +105,7 @@ async fn start_download(
     cookie_path: Option<String>,
     ytdlp_path: Option<String>,
     cookies_from_browser: Option<String>,
-    app_handle: tauri::AppHandle,
+    _app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let task_id = task.id.clone();
     let task_id_clone = task_id.clone();
@@ -236,7 +240,7 @@ async fn start_download(
                 // }
 
                 // 收集 stderr 错误信息
-                let mut stderr_output = String::new();
+                let mut _stderr_output = String::new();
                 if let Some(stderr) = child.stderr.take() {
                     let task_id_err = task_id_clone.clone();
                     let err_msg_store = last_error_msg_clone.clone(); // 克隆引用
@@ -341,7 +345,7 @@ async fn extract_channel_urls(
     channel_url: String,
     window: tauri::Window,
     ytdlp_path: Option<String>,
-    app_handle: tauri::AppHandle,
+    _app_handle: tauri::AppHandle,
 ) -> Result<ChannelExtractionResult, String> {
     info!("Starting channel extraction for URL: {}", channel_url);
 
@@ -423,7 +427,7 @@ async fn extract_channel_urls(
 async fn sniff_youtube_resources(
     video_url: String,
     window: tauri::Window,
-    app_handle: tauri::AppHandle,
+    _app_handle: tauri::AppHandle,
 ) -> Result<(Vec<CapturedResource>, Vec<CapturedResource>), String> {
     info!("Starting resource sniffing for URL: {}", video_url);
 
@@ -539,7 +543,7 @@ async fn check_version(cmd: String, args: Vec<String>, ytdlp_path: Option<String
     match command.output().await {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let _stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
             if output.status.success() {
                 info!("Command succeeded: {}", stdout.trim());
@@ -614,6 +618,71 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            let show = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>)?;
+            let hide = MenuItem::with_id(app, "hide", "隐藏窗口", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &hide, &quit])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .on_menu_event(|app_handle: &tauri::AppHandle, event| match event.id.as_ref() {
+                    "quit" => app_handle.exit(0),
+                    "show" => {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "hide" => {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.hide();
+                        }
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    match event {
+                        TrayIconEvent::Click { button: MouseButton::Left, .. } => {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show(); 
+                                let _ = window.unminimize(); 
+                                let _ = window.set_focus(); 
+                            }
+                        }
+                        TrayIconEvent::Click { button: MouseButton::Right, .. } => {
+                            // Right click: Show context menu (handled automatically)
+                        }
+                        _ => {}
+                    }
+                })
+                .build(app)?;
+
+            // Handle window close event - hide window and keep running in background
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        info!("Close requested - hiding window");
+                        api.prevent_close();
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
+
+            Ok(())
+        })
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let _ = app.emit("single-instance", args.clone());
+
+            // Show window when another instance is launched
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .invoke_handler(tauri::generate_handler![
             get_default_config,
             load_config,

@@ -119,7 +119,8 @@ async function copyUrl(url: string) {
 
 async function openDownloadFolder() {
   try {
-    await invoke("plugin:opener|open", { path: configStore.downloadPath });
+    await invoke("open_download_folder", { path: configStore.downloadPath });
+    message.success("已打开下载文件夹");
   } catch (err) {
     message.error("打开文件夹失败");
   }

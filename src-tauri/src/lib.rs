@@ -113,190 +113,182 @@ async fn start_download(
     let preset = task.preset.clone();
     let path = task.path.clone();
 
-    info!("Starting download task - ID: {}, URL: {}, Preset: {}, Path: {}", task_id, url, preset, path);
+    info!(
+        "Starting download task - ID: {}, URL: {}, Preset: {}, Path: {}",
+        task_id, url, preset, path
+    );
 
     tokio::spawn(async move {
         let last_error_msg = std::sync::Arc::new(tokio::sync::Mutex::new(String::new()));
         let last_error_msg_clone = last_error_msg.clone();
-        let ytdlp_path = std::path::PathBuf::from(
-            ytdlp_path.unwrap_or_else(|| "./win/yt-dlp.exe".to_string())
-        );
-        info!("Executing yt-dlp from: {}", ytdlp_path.display());
 
-        // Check if file exists
-        if ytdlp_path.exists() {
-            info!("yt-dlp.exe found at: {}", ytdlp_path.display());
-        } else {
-            error!("yt-dlp.exe NOT found at: {}", ytdlp_path.display());
-            // Try absolute path
-            if let Ok(current_dir) = std::env::current_dir() {
-                error!("Current working directory: {}", current_dir.display());
-                let abs_path = current_dir.join(&ytdlp_path);
-                error!("Absolute path would be: {}", abs_path.display());
-            }
+        let ytdlp_path = std::path::PathBuf::from(
+            ytdlp_path.unwrap_or_else(|| "./win/yt-dlp.exe".to_string()),
+        );
+
+        if !ytdlp_path.exists() {
+            error!("yt-dlp NOT found: {}", ytdlp_path.display());
+            return;
         }
 
+        // ========================
+        // 构建命令
+        // ========================
         let mut cmd = TokioCommand::new(&ytdlp_path);
+
         cmd.env("PYTHONIOENCODING", "utf-8")
-            .arg("--newline")
-            .arg("--no-simulate")
+            .env("PYTHONUTF8", "1")
+            .env("PYTHONLEGACYWINDOWSSTDIO", "1")
+            .env("LC_ALL", "C.UTF-8");
+
+        cmd.arg("--newline")
             .arg("--progress")
+            .arg("--no-warnings")
+            .arg("--no-color")
+            .arg("--encoding")
+            .arg("utf-8")
             .arg("--progress-template")
-            .arg("%(progress.status)s__SEP__%(progress._total_bytes_estimate_str)s__SEP__%(progress._percent_str)s__SEP__%(progress._speed_str)s__SEP__%(progress._eta_str)s__SEP__%(info.title)s")
+            .arg("%(progress.status)s__SEP__%(progress._percent_str)s__SEP__%(progress._speed_str)s__SEP__%(progress._eta_str)s")
             .arg("-P")
             .arg(&path);
 
-        // --cookies 和 --cookies-from-browser 互斥，优先使用 cookie 文件
-        // 当 browser 为 custom 时，强制使用 cookie 文件
-        let browser_val = cookies_from_browser.as_deref().unwrap_or_default();
+        // ========================
+        // Cookie 逻辑
+        // ========================
+        let browser_val = cookies_from_browser.as_deref().unwrap_or("chrome");
         let is_custom_browser = browser_val.eq_ignore_ascii_case("custom");
 
-        let browser_active = !is_custom_browser && !browser_val.is_empty();
-        let cookie_file_active = is_custom_browser || (!browser_active && cookie_path.as_deref().map(|s| !s.is_empty()).unwrap_or(false));
-
-        if browser_active {
-            info!("Using cookies from browser: {}", browser_val);
+        if !is_custom_browser {
             cmd.arg("--cookies-from-browser").arg(browser_val);
-        } else if cookie_file_active {
-            if let Some(cookie_file) = cookie_path.as_deref() {
-                info!("Using cookie file: {}", cookie_file);
+        } else if let Some(cookie_file) = cookie_path.as_deref() {
+            if !cookie_file.is_empty() {
                 cmd.arg("--cookies").arg(cookie_file);
             }
         }
 
-        // 只有 YouTube 链接才附加 -f 格式参数
+        // ========================
+        // 平台适配（重点）
+        // ========================
         let is_youtube = url.contains("youtube.com") || url.contains("youtu.be");
-        if is_youtube {
+        if url.contains("bilibili.com") {
+            cmd.arg("-f").arg("bv*+ba/b");
+        } else if is_youtube {
             cmd.arg("-f").arg(&preset);
         }
+
         cmd.arg(&url)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
 
-        // Log the complete command
-        let mut cmd_args = vec![
-            "--newline".to_string(),
-            "--no-simulate".to_string(),
-            "--progress".to_string(),
-            "--progress-template".to_string(),
-            "%(progress.status)s__SEP__%(progress._total_bytes_estimate_str)s__SEP__%(progress._percent_str)s__SEP__%(progress._speed_str)s__SEP__%(progress._eta_str)s__SEP__%(info.title)s".to_string(),
-            "-P".to_string(),
-            path.clone(),
-        ];
+        info!("Executing: {:?}", cmd);
 
-        // 日志同步：优先使用浏览器 cookie，否则使用 cookie 文件
-        if browser_active {
-            cmd_args.push("--cookies-from-browser".to_string());
-            cmd_args.push(cookies_from_browser.as_deref().unwrap().to_string());
-        } else if cookie_file_active {
-            cmd_args.push("--cookies".to_string());
-            cmd_args.push(cookie_path.as_deref().unwrap().to_string());
-        }
-
-        if is_youtube {
-            cmd_args.push("-f".to_string());
-            cmd_args.push(preset.clone());
-        }
-        cmd_args.push(url.clone());
-
-        info!("Executing command: {} {}", ytdlp_path.display(), cmd_args.join(" "));
-
+        // ========================
+        // 启动进程
+        // ========================
         match cmd.spawn() {
             Ok(mut child) => {
-                info!("yt-dlp process spawned successfully for task: {}", task_id_clone);
-                // if let Some(stdout) = child.stdout.take() {
-                //     let reader = BufReader::new(stdout);
-                //     let mut lines = reader.lines();
+                let stdout = child.stdout.take().expect("stdout missing");
+                let stderr = child.stderr.take().expect("stderr missing");
 
-                    // while let Ok(Some(line)) = lines.next_line().await {
-                    //     if line.contains("__SEP__") {
-                    //         let parts: Vec<&str> = line.split("__SEP__").collect();
-                    //         if parts.len() >= 6 {
-                    //             debug!("Progress update - Size: {}, Progress: {}, Speed: {}, ETA: {}",
-                    //                 parts[1].trim(), parts[2].trim(), parts[3].trim(), parts[4].trim());
-                    //             let progress_data = serde_json::json!({
-                    //                 "id": task_id_clone.clone(),
-                    //                 "status": "Downloading",
-                    //                 "size": parts[1].trim(),
-                    //                 "progress": parts[2].trim().replace("%", ""),
-                    //                 "speed": parts[3].trim(),
-                    //                 "eta": parts[4].trim(),
-                    //                 "title": parts[5].trim(),
-                    //             });
-                    //             let _ = window.emit("download_progress", progress_data);
-                    //         }
-                    //     } else if line.starts_with("[Merger]") || line.starts_with("[ExtractAudio]")
-                    //     {
-                    //         info!("Converting file for task: {}", task_id_clone);
-                    //         let _ = window.emit(
-                    //             "download_progress",
-                    //             serde_json::json!({
-                    //                 "id": task_id_clone.clone(),
-                    //                 "status": "Converting",
-                    //             }),
-                    //         );
-                    //     }
-                    // }
-                // }
+                let window_stdout = window.clone();
+                let task_id_stdout = task_id_clone.clone();
+                let task_id_stderr = task_id_clone.clone();
 
-                // 收集 stderr 错误信息
-                let mut _stderr_output = String::new();
-                if let Some(stderr) = child.stderr.take() {
-                    let task_id_err = task_id_clone.clone();
-                    let err_msg_store = last_error_msg_clone.clone(); // 克隆引用
-                    tokio::spawn(async move {
-                        let reader = BufReader::new(stderr);
-                        let mut lines = reader.lines();
-                        while let Ok(Some(line)) = lines.next_line().await {
-                            if !line.trim().is_empty() {
-                                error!("[yt-dlp stderr][{}] {}", task_id_err, line);
-                                // 保存最后一行有效错误信息
-                                let mut storage = err_msg_store.lock().await;
-                                *storage = line; 
+                // ========================
+                // 读取 stdout（进度）
+                // ========================
+                let stdout_task = tokio::spawn(async move {
+                    let reader = BufReader::new(stdout);
+                    let mut lines = reader.lines();
+
+                    while let Ok(Some(line)) = lines.next_line().await {
+                        if line.contains("__SEP__") {
+                            let parts: Vec<&str> = line.split("__SEP__").collect();
+
+                            if parts.len() >= 6 {
+                                let _ = window_stdout.emit(
+                                    "download_progress",
+                                    serde_json::json!({
+                                        "id": task_id_stdout,
+                                        "status": "Downloading",
+                                        "size": parts[1].trim(),
+                                        "progress": parts[2].trim().replace("%", ""),
+                                        "speed": parts[3].trim(),
+                                        "eta": parts[4].trim(),
+                                        "title": parts[5].trim(),
+                                    }),
+                                );
                             }
+                        } else if line.starts_with("[Merger]")
+                            || line.starts_with("[ExtractAudio]")
+                        {
+                            let _ = window_stdout.emit(
+                                "download_progress",
+                                serde_json::json!({
+                                    "id": task_id_stdout,
+                                    "status": "Converting",
+                                }),
+                            );
                         }
-                    });
-                }
+                    }
+                });
 
-                let status = child.wait().await;
-                match status {
-                    Ok(exit_status) => {
-                        if exit_status.success() {
-                            info!("Download completed successfully for task: {}", task_id_clone);
+                // ========================
+                // 读取 stderr（错误）
+                // ========================
+                let stderr_task = tokio::spawn(async move {
+                    let reader = BufReader::new(stderr);
+                    let mut lines = reader.lines();
+
+                    while let Ok(Some(line)) = lines.next_line().await {
+                        if !line.trim().is_empty() {
+                            error!("[yt-dlp stderr][{}] {}", task_id_stderr, line);
+
+                            let mut storage = last_error_msg_clone.lock().await;
+                            *storage = line;
+                        }
+                    }
+                });
+
+                // ❗关键：等待两个流结束（防止 Windows pipe 崩）
+                let _ = tokio::join!(stdout_task, stderr_task);
+
+                // ========================
+                // 等待进程结束
+                // ========================
+                match child.wait().await {
+                    Ok(status) => {
+                        if status.success() {
                             let _ = window.emit(
                                 "download_progress",
                                 serde_json::json!({
-                                    "id": task_id_clone.clone(),
+                                    "id": task_id_clone,
                                     "status": "Finished",
                                     "progress": "100",
                                 }),
                             );
                         } else {
-                            // 获取捕获到的错误信息
-                            let final_error = last_error_msg.lock().await.clone();
-                            let error_to_show = if final_error.is_empty() {
-                                "Process exited with error (check console)".to_string()
-                            } else {
-                                final_error
-                            };
+                            let err = last_error_msg.lock().await.clone();
 
-                            error!("Download failed: {}", error_to_show);
                             let _ = window.emit(
                                 "download_progress",
                                 serde_json::json!({
-                                    "id": task_id_clone.clone(),
+                                    "id": task_id_clone,
                                     "status": "ERROR",
-                                    "error": error_to_show, // 这里的 error 字段现在包含了具体原因
+                                    "error": if err.is_empty() {
+                                        "Download failed".to_string()
+                                    } else {
+                                        err
+                                    },
                                 }),
                             );
                         }
                     }
                     Err(e) => {
-                        error!("Download process error for task {}: {}", task_id_clone, e);
                         let _ = window.emit(
                             "download_progress",
                             serde_json::json!({
-                                "id": task_id_clone.clone(),
+                                "id": task_id_clone,
                                 "status": "ERROR",
                                 "error": e.to_string(),
                             }),
@@ -308,7 +300,7 @@ async fn start_download(
                 let _ = window.emit(
                     "download_progress",
                     serde_json::json!({
-                        "id": task_id_clone.clone(),
+                        "id": task_id_clone,
                         "status": "ERROR",
                         "error": e.to_string(),
                     }),
@@ -607,6 +599,38 @@ async fn check_version(cmd: String, args: Vec<String>, ytdlp_path: Option<String
     Err(format!("Failed to execute {}", cmd))
 }
 
+#[tauri::command]
+fn open_download_folder(path: String) -> Result<(), String> {
+    use std::process::Command;
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    info!("Opening folder: {}", path);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_default_env()
@@ -692,6 +716,7 @@ pub fn run() {
             extract_channel_urls,
             sniff_youtube_resources,
             check_version,
+            open_download_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

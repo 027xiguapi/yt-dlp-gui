@@ -247,11 +247,11 @@ const columns = [
 </script>
 
 <template>
-  <div class="main-container">
-    <n-space vertical :size="20" style="padding: 24px">
-      <div class="app-header">
-        <h1 class="title">视频、音乐下载管理器</h1>
-        <p class="subtitle">高性能下载引擎</p>
+  <div class="h-screen bg-gray-50 overflow-y-auto">
+    <n-space vertical :size="20" class="p-6">
+      <div class="mb-2">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">视频、音乐下载管理器</h1>
+        <p class="text-gray-600 text-sm mt-1">高性能下载引擎</p>
       </div>
 
       <n-card hoverable>
@@ -309,31 +309,6 @@ const columns = [
 </template>
 
 <style scoped>
-.main-container {
-  height: 100vh;
-  background-color: #f9f9f9;
-  overflow-y: auto;
-}
-
-.app-header {
-  margin-bottom: 8px;
-}
-
-.title {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  margin: 4px 0 0;
-  color: #666;
-  font-size: 14px;
-}
-
 :deep(.n-data-table-table) {
   font-variant-numeric: tabular-nums;
 }

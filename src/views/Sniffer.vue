@@ -172,18 +172,18 @@ const imageColumns = [
 </script>
 
 <template>
-  <div class="sniffer-container">
-    <n-space vertical :size="16" style="padding: 20px">
+  <div class="flex flex-col h-full overflow-y-auto">
+    <n-space vertical :size="16" class="p-5">
       <!-- Header -->
-      <div class="header">
-        <h1>YouTube Resource Sniffer</h1>
+      <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-5 rounded-none shadow-sm">
+        <h1 class="m-0 text-2xl font-bold">YouTube 资源嗅探</h1>
       </div>
 
       <!-- Input Panel -->
-      <n-card title="Sniff Resources" :segmented="{ content: true }">
+      <n-card title="嗅探资源" :segmented="{ content: true }">
         <n-space vertical :size="12">
           <div>
-            <label class="label">YouTube Video URL:</label>
+            <label class="block mb-2 font-medium text-gray-700">YouTube 视频 URL:</label>
             <n-input
               v-model:value="videoUrl"
               type="text"
@@ -198,7 +198,7 @@ const imageColumns = [
             :loading="isSniffing"
             block
           >
-            {{ isSniffing ? "Sniffing..." : "Start Sniffing" }}
+            {{ isSniffing ? "嗅探中..." : "开始嗅探" }}
           </n-button>
 
           <div v-if="isSniffing">
@@ -208,12 +208,12 @@ const imageColumns = [
       </n-card>
 
       <!-- Results Panel -->
-      <n-card v-if="videos.length > 0 || images.length > 0" title="Captured Resources" :segmented="{ content: true }">
+      <n-card v-if="videos.length > 0 || images.length > 0" title="捕获的资源" :segmented="{ content: true }">
         <n-tabs type="bar">
-          <n-tab-pane name="Videos" :tab="`Videos (${videos.length})`">
+          <n-tab-pane name="Videos" :tab="`视频 (${videos.length})`">
             <n-space vertical :size="12">
-              <div v-if="videos.length === 0" class="empty-state">
-                No videos captured
+              <div v-if="videos.length === 0" class="text-center py-10 text-gray-500">
+                未捕获视频
               </div>
               <n-table
                 v-else
@@ -226,10 +226,10 @@ const imageColumns = [
             </n-space>
           </n-tab-pane>
 
-          <n-tab-pane name="Images" :tab="`Images (${images.length})`">
+          <n-tab-pane name="Images" :tab="`图片 (${images.length})`">
             <n-space vertical :size="12">
-              <div v-if="images.length === 0" class="empty-state">
-                No images captured
+              <div v-if="images.length === 0" class="text-center py-10 text-gray-500">
+                未捕获图片
               </div>
               <n-table
                 v-else
@@ -242,24 +242,24 @@ const imageColumns = [
             </n-space>
           </n-tab-pane>
 
-          <n-tab-pane name="Statistics" tab="Statistics">
+          <n-tab-pane name="Statistics" tab="统计信息">
             <n-space vertical :size="12">
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div class="stat-label">Total Videos</div>
-                  <div class="stat-value">{{ videos.length }}</div>
+              <div class="grid grid-cols-auto-fit gap-4">
+                <div class="p-4 bg-gray-100 rounded text-center">
+                  <div class="text-xs text-gray-600 mb-2">总视频数</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ videos.length }}</div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-label">Total Images</div>
-                  <div class="stat-value">{{ images.length }}</div>
+                <div class="p-4 bg-gray-100 rounded text-center">
+                  <div class="text-xs text-gray-600 mb-2">总图片数</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ images.length }}</div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-label">Total Resources</div>
-                  <div class="stat-value">{{ videos.length + images.length }}</div>
+                <div class="p-4 bg-gray-100 rounded text-center">
+                  <div class="text-xs text-gray-600 mb-2">总资源数</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ videos.length + images.length }}</div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-label">Videos Size</div>
-                  <div class="stat-value">{{ formatSize(videos.reduce((sum, v) => sum + v.size, 0)) }}</div>
+                <div class="p-4 bg-gray-100 rounded text-center">
+                  <div class="text-xs text-gray-600 mb-2">视频总大小</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ formatSize(videos.reduce((sum, v) => sum + v.size, 0)) }}</div>
                 </div>
               </div>
             </n-space>
@@ -267,67 +267,11 @@ const imageColumns = [
         </n-tabs>
       </n-card>
 
-      <n-empty v-else-if="!isSniffing" description="Enter a YouTube URL and click 'Start Sniffing' to capture resources" />
+      <n-empty v-else-if="!isSniffing" description="输入 YouTube URL 并点击'开始嗅探'来捕获资源" />
     </n-space>
   </div>
 </template>
 
 <style scoped>
-.sniffer-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #555;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #999;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.stat-item {
-  padding: 16px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-}
+/* Tailwind CSS handles all styling via utility classes above */
 </style>

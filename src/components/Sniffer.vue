@@ -168,7 +168,6 @@ const imageColumns = [
   },
 ];
 </script>
-</script>
 
 <template>
   <div class="sniffer-container">

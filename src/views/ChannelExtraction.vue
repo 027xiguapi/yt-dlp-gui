@@ -42,11 +42,11 @@ async function addExtractedUrlsToQueue() {
 </script>
 
 <template>
-  <div class="channel-extraction">
-    <n-space vertical :size="16" style="padding: 20px">
+  <div class="flex flex-col h-full overflow-y-auto">
+    <n-space vertical :size="16" class="p-5">
       <!-- Header -->
-      <div class="header">
-        <h1>Extract from Channel</h1>
+      <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-5 rounded-none shadow-sm">
+        <h1 class="m-0 text-2xl font-bold">频道提取</h1>
       </div>
 
       <!-- Channel Extraction Panel -->
@@ -74,17 +74,17 @@ async function addExtractedUrlsToQueue() {
       </n-card>
 
       <!-- Extraction Results -->
-      <n-card v-if="channelStore.extractedUrls.length > 0" title="Extraction Results" :segmented="{ content: true }">
+      <n-card v-if="channelStore.extractedUrls.length > 0" title="提取结果" :segmented="{ content: true }">
         <n-space vertical :size="12">
-          <div class="extraction-info">
-            <span>Channel: <strong>{{ channelStore.extractedChannelName }}</strong></span>
-            <span>Videos: <strong>{{ channelStore.extractedUrls.length }}</strong></span>
+          <div class="flex gap-5 text-sm py-2">
+            <span>频道: <strong>{{ channelStore.extractedChannelName }}</strong></span>
+            <span>视频数: <strong>{{ channelStore.extractedUrls.length }}</strong></span>
           </div>
 
-          <div class="urls-list">
-            <div class="urls-header">Extracted URLs:</div>
-            <div class="urls-content">
-              <div v-for="(url, index) in channelStore.extractedUrls" :key="index" class="url-item">
+          <div class="border border-gray-300 rounded">
+            <div class="bg-gray-100 px-3 py-2 font-medium text-sm">提取的URL:</div>
+            <div class="max-h-72 overflow-y-auto p-2">
+              <div v-for="(url, index) in channelStore.extractedUrls" :key="index" class="px-2 py-1.5 text-xs text-gray-600 word-break break-all border-b border-gray-100 last:border-b-0">
                 {{ index + 1 }}. {{ url }}
               </div>
             </div>
@@ -104,61 +104,5 @@ async function addExtractedUrlsToQueue() {
 </template>
 
 <style scoped>
-.channel-extraction {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.extraction-info {
-  display: flex;
-  gap: 20px;
-  font-size: 14px;
-  padding: 8px 0;
-}
-
-.urls-list {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.urls-header {
-  background-color: #f5f5f5;
-  padding: 8px 12px;
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.urls-content {
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.url-item {
-  padding: 6px 8px;
-  font-size: 12px;
-  color: #666;
-  word-break: break-all;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.url-item:last-child {
-  border-bottom: none;
-}
+/* Tailwind CSS handles all styling via utility classes above */
 </style>

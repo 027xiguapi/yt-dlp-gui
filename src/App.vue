@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
-import { 
-  NLayout, NLayoutSider, NMenu, NLayoutContent, 
-  NMessageProvider, NConfigProvider, zhCN, dateZhCN, GlobalThemeOverrides 
+import {
+  NLayout, NLayoutSider, NMenu, NLayoutContent,
+  NMessageProvider, NConfigProvider, zhCN, dateZhCN, GlobalThemeOverrides
 } from 'naive-ui'
 import { Download, Radar, Settings, Clapperboard } from '@lucide/vue'
 import { h } from 'vue'
@@ -32,17 +32,17 @@ function handleMenuSelect(key: string) { router.push(key) }
 <template>
   <n-config-provider :theme-overrides="themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <n-message-provider>
-      <n-layout has-sider class="app-wrapper">
+      <n-layout has-sider class="h-screen bg-gray-50">
         <n-layout-sider
           bordered
           collapse-mode="width"
           :collapsed-width="64"
           :width="220"
-          class="app-sider"
+          class="bg-white"
         >
-          <div class="logo-container">
-            <div class="logo-icon">YT</div>
-            <span class="logo-text">YT-DLP GUI</span>
+          <div class="flex items-center gap-3 px-4 py-6 border-b border-gray-200">
+            <div class="flex items-center justify-center w-8 h-8 rounded-lg font-bold text-white bg-gradient-to-br from-blue-500 to-purple-500">YT</div>
+            <span class="text-lg font-bold text-gray-900">YT-DLP GUI</span>
           </div>
           <n-menu
             :value="route.path"
@@ -50,8 +50,8 @@ function handleMenuSelect(key: string) { router.push(key) }
             @update:value="handleMenuSelect"
           />
         </n-layout-sider>
-        <n-layout class="main-layout">
-          <n-layout-content class="content-scroll">
+        <n-layout class="bg-gray-100">
+          <n-layout-content class="p-0 h-screen overflow-auto">
             <router-view />
           </n-layout-content>
         </n-layout>
@@ -61,26 +61,5 @@ function handleMenuSelect(key: string) { router.push(key) }
 </template>
 
 <style scoped>
-.app-wrapper { height: 100vh; background-color: #f9fafb; }
-.app-sider { background-color: #ffffff; }
-.logo-container {
-  padding: 24px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.logo-icon {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: white;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-weight: bold;
-}
-.logo-text { font-size: 18px; font-weight: 700; color: #111827; }
-.main-layout { background-color: #f3f4f6; }
-.content-scroll { padding: 0; height: 100vh; }
+/* Tailwind CSS handles all styling via utility classes above */
 </style>

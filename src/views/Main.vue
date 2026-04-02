@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from "vue";
+import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
@@ -10,6 +11,7 @@ import { Trash2, Copy, Play, CheckCircle2, FolderOpen } from "@lucide/vue";
 import { useConfigStore } from "../stores/configStore";
 import { useDownloadStore } from "../stores/downloadStore";
 
+const { t } = useI18n();
 const configStore = useConfigStore();
 const downloadStore = useDownloadStore();
 const message = useMessage();
@@ -251,8 +253,8 @@ const columns = [
   <div class="h-screen bg-gray-50 overflow-y-auto">
     <n-space vertical :size="20" class="p-6">
       <div class="mb-2">
-        <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">视频、音乐下载管理器</h1>
-        <p class="text-gray-600 text-sm mt-1">高性能下载引擎</p>
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">{{ t('main.title') }}</h1>
+        <p class="text-gray-600 text-sm mt-1">{{ t('main.subtitle') }}</p>
       </div>
 
       <n-card hoverable>
@@ -260,36 +262,36 @@ const columns = [
           <n-input
             v-model:value="urlInput"
             type="textarea"
-            placeholder="在此粘贴视频、音乐链接（支持多行粘贴）"
+            :placeholder="t('main.pasteUrl')"
             :autosize="{ minRows: 3, maxRows: 6 }"
           />
           <n-button type="primary" size="large" @click="addUrls" block>
-            添加到下载队列
+            {{ t('main.addQueue') }}
           </n-button>
         </n-space>
       </n-card>
 
-      <n-card title="下载任务队列" :segmented="{ content: true }">
+      <n-card :title="t('main.downloadQueue')" :segmented="{ content: true }">
         <template #header-extra>
           <n-space>
-            <n-button 
-              secondary 
-              type="primary" 
-              @click="startSelectedDownloads" 
+            <n-button
+              secondary
+              type="primary"
+              @click="startSelectedDownloads"
               :disabled="checkedRowKeys.length === 0"
             >
-              开始选中 ({{ checkedRowKeys.length }})
+              {{ t('main.startSelected') }} ({{ checkedRowKeys.length }})
             </n-button>
-            <n-button 
-              secondary 
-              type="error" 
-              @click="deleteSelectedRows" 
+            <n-button
+              secondary
+              type="error"
+              @click="deleteSelectedRows"
               :disabled="checkedRowKeys.length === 0"
             >
-              删除选中
+              {{ t('main.deleteSelected') }}
             </n-button>
             <n-button quaternary @click="downloadStore.clearCompleted">
-              清空已完成
+              {{ t('main.clearCompleted') }}
             </n-button>
           </n-space>
         </template>

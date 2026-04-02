@@ -146,7 +146,7 @@ export const useConfigStore = defineStore('config', () => {
         const output = await invoke<string>('check_version', {
           cmd: check.cmd,
           args: check.args,
-          ytdlp_path: ytdlpPath.value || config.value?.general.ytdlp_path
+          ytdlpPath: ytdlpPath.value || config.value?.general.ytdlp_path
         })
         versions.value[check.key] = output.split('\n')[0] || '未找到'
       } catch (error) {

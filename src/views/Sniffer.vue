@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { NButton, NInput, NCard, NSpace, NProgress, NEmpty, NTable, NTabs, NTabPane } from "naive-ui";
 
 interface CapturedResource {
@@ -17,11 +16,10 @@ const sniffProgress = ref(0);
 const videos = ref<CapturedResource[]>([]);
 const images = ref<CapturedResource[]>([]);
 
-const appWindow = getCurrentWindow();
+// const appWindow = getCurrentWindow();
 
 // appWindow.then(win => {
 //   win.listen<any>("sniff_progress", (event) => {
-//     const data = event.payload;
 //     sniffProgress.value = Math.min(sniffProgress.value + 10, 90);
 //   });
 // });

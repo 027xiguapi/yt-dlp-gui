@@ -148,9 +148,9 @@ export const useConfigStore = defineStore('config', () => {
           args: check.args,
           ytdlpPath: ytdlpPath.value || config.value?.general.ytdlp_path
         })
-        versions.value[check.key] = output.split('\n')[0] || '未找到'
+        versions.value[check.key as keyof typeof versions.value] = output.split('\n')[0] || '未找到'
       } catch (error) {
-        versions.value[check.key] = '未安装或不在 PATH 中'
+        versions.value[check.key as keyof typeof versions.value] = '未安装或不在 PATH 中'
       }
     }
   }

@@ -72,6 +72,7 @@ export const useDownloadStore = defineStore('download', () => {
       eta: '-',
       size: '-',
       title: url,
+      error: '',
     }
     tasks.value.set(taskId, task)
     saveToStorage()

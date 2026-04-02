@@ -19,8 +19,7 @@ const images = ref<CapturedResource[]>([]);
 
 const appWindow = getCurrentWindow();
 
-appWindow.listen<any>("sniff_progress", (event) => {
-  const data = event.payload;
+appWindow.listen<any>("sniff_progress", (_event) => {
   sniffProgress.value = Math.min(sniffProgress.value + 10, 90);
 });
 

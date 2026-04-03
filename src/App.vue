@@ -175,7 +175,7 @@ function closeEnvironmentCheck() {
           </div>
         </n-layout-sider>
         <n-layout class="bg-gray-100">
-          <n-layout-content class="p-0 h-screen overflow-auto">
+          <n-layout-content class="p-0 h-screen overflow-x-scroll">
             <router-view />
           </n-layout-content>
         </n-layout>

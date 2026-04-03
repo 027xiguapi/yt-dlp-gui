@@ -204,24 +204,38 @@ async fn start_download(
                     while let Ok(Some(line)) = lines.next_line().await {
                         if line.contains("__SEP__") {
                             let parts: Vec<&str> = line.split("__SEP__").collect();
+                            info!("[Download Progress] Raw line parts: {:?}", parts);
 
-                            if parts.len() >= 6 {
+                            if parts.len() >= 4 {
+                                let status = parts[0].trim();
+                                let progress_str = parts[1].trim().replace("%", "").trim().to_string();
+                                let speed = parts[2].trim().to_string();
+                                let eta = parts[3].trim().to_string();
+
+                                // Parse progress percentage
+                                let progress_value: f32 = progress_str.parse().unwrap_or(0.0);
+
+                                info!(
+                                    "[Download Progress] ID: {}, Status: {}, Progress: {}%, Speed: {}, ETA: {}",
+                                    task_id_stdout, status, progress_value, speed, eta
+                                );
+
                                 let _ = window_stdout.emit(
                                     "download_progress",
                                     serde_json::json!({
                                         "id": task_id_stdout,
                                         "status": "Downloading",
-                                        "size": parts[1].trim(),
-                                        "progress": parts[2].trim().replace("%", ""),
-                                        "speed": parts[3].trim(),
-                                        "eta": parts[4].trim(),
-                                        "title": parts[5].trim(),
+                                        "progress": progress_value,
+                                        "size": status,
+                                        "speed": speed,
+                                        "eta": eta,
                                     }),
                                 );
                             }
                         } else if line.starts_with("[Merger]")
                             || line.starts_with("[ExtractAudio]")
                         {
+                            info!("[Download Progress] ID: {} - Converting", task_id_stdout);
                             let _ = window_stdout.emit(
                                 "download_progress",
                                 serde_json::json!({
@@ -229,6 +243,8 @@ async fn start_download(
                                     "status": "Converting",
                                 }),
                             );
+                        } else if !line.trim().is_empty() {
+                            info!("[yt-dlp stdout][{}] {}", task_id_stdout, line);
                         }
                     }
                 });

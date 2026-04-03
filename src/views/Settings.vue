@@ -107,8 +107,9 @@ async function checkVersions() {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-50">
-    <n-space vertical :size="20" class="p-6">
+  <div class="h-screen w-full bg-gray-50 overflow-y-auto overflow-x-auto" style="min-width: 500px">
+    <div class="flex flex-col min-h-screen">
+      <n-space vertical :size="20" class="p-6">
       <header class="bg-white px-10 py-8 border-b border-gray-200 -mx-6">
         <div class="flex items-center gap-4 max-w-4xl">
           <n-icon size="28" :component="DownloadCloud" />
@@ -249,6 +250,7 @@ async function checkVersions() {
         </n-space>
       </main>
     </n-space>
+    </div>
   </div>
 </template>
 

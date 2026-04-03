@@ -42,7 +42,7 @@ async function addExtractedUrlsToQueue() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-y-auto">
+  <div class="h-screen w-full bg-gray-50 overflow-y-auto overflow-x-auto" style="min-width: 500px">
     <n-space vertical :size="16" class="p-5">
       <!-- Header -->
       <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-5 rounded-none shadow-sm">

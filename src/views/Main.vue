@@ -19,6 +19,21 @@ const message = useMessage();
 const urlInput = ref("");
 const checkedRowKeys = ref<string[]>([]);
 
+// 格式化速度，保留一位小数
+function formatSpeed(speed: string): string {
+  if (!speed) return '';
+
+  // 匹配数字部分
+  const match = speed.match(/[\d.]+/);
+  if (match) {
+    const num = parseFloat(match[0]);
+    const unit = speed.replace(/[\d.]/g, '').trim();
+    return `${num.toFixed(1)}${unit}`;
+  }
+
+  return speed;
+}
+
 onMounted(async () => {
   await configStore.loadConfig();
 
@@ -28,7 +43,7 @@ onMounted(async () => {
     downloadStore.updateTask(data.id, {
       status: data.status,
       progress: data.progress ? parseFloat(data.progress) : undefined,
-      speed: data.speed,
+      speed: data.speed ? formatSpeed(data.speed) : undefined,
       eta: data.eta,
       size: data.size,
       title: data.title,
@@ -250,7 +265,7 @@ const columns = [
 </script>
 
 <template>
-  <div class="h-screen bg-gray-50 overflow-y-auto">
+  <div class="h-screen w-full bg-gray-50 overflow-y-auto overflow-x-auto" style="min-width: 500px">
     <n-space vertical :size="20" class="p-6">
       <div class="mb-2">
         <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">{{ t('main.title') }}</h1>
@@ -314,5 +329,27 @@ const columns = [
 <style scoped>
 :deep(.n-data-table-table) {
   font-variant-numeric: tabular-nums;
+}
+
+:deep(.n-data-table-wrapper) {
+  overflow-x: auto;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 </style>

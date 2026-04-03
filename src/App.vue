@@ -1,17 +1,25 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   NLayout, NLayoutSider, NMenu, NLayoutContent,
-  NMessageProvider, NConfigProvider, zhCN, dateZhCN, enUS, dateEnUS, GlobalThemeOverrides, NButton, NSpace
+  NMessageProvider, NConfigProvider, zhCN, dateZhCN, enUS, dateEnUS, GlobalThemeOverrides, NButton, NSpace,
+  NAlert, NIcon, NModal
 } from 'naive-ui'
-import { Download, Radar, Settings, Clapperboard } from '@lucide/vue'
+import { Download, Radar, Settings, Clapperboard, AlertCircle, CheckCircle } from '@lucide/vue'
 import { h } from 'vue'
+import { useConfigStore } from './stores/configStore'
 
 const router = useRouter()
 const route = useRoute()
 const { locale } = useI18n()
+const { t } = useI18n()
+const configStore = useConfigStore()
+
+// 环境检查状态
+const showEnvironmentCheck = ref(true)
+const environmentChecking = ref(false)
 
 // 语言配置
 const locales = ref<{ label: string; value: 'zh' | 'en' }[]>([
@@ -34,9 +42,6 @@ const themeOverrides: GlobalThemeOverrides = {
   }
 }
 
-// 使用 i18n 的菜单选项
-const { t } = useI18n()
-
 const menuOptions = computed(() => [
   { label: t('menu.download'), key: '/', icon: () => h(Download, { size: 18 }) },
   { label: t('menu.channelExtraction'), key: '/channel-extraction', icon: () => h(Clapperboard, { size: 18 }) },
@@ -47,12 +52,94 @@ const menuOptions = computed(() => [
 const naiveLocale = computed(() => locale.value === 'zh' ? zhCN : enUS)
 const naiveDateLocale = computed(() => locale.value === 'zh' ? dateZhCN : dateEnUS)
 
+// 检查是否有工具未安装
+const hasToolsNotInstalled = computed(() => {
+  return Object.values(configStore.versions).some(v => v.includes('未安装') || v.includes('not installed'))
+})
+
+// 所有工具版本都已检测
+const hasVersionsDetected = computed(() => {
+  return Object.values(configStore.versions).some(v => v && v.length > 0)
+})
+
+async function performEnvironmentCheck() {
+  environmentChecking.value = true
+  await configStore.checkVersions()
+  environmentChecking.value = false
+}
+
+// 初始化时检查环境
+onMounted(async () => {
+  await configStore.loadConfig()
+  await performEnvironmentCheck()
+  setTimeout(() => {
+    showEnvironmentCheck.value = hasToolsNotInstalled.value
+  }, 500)
+})
+
 function handleMenuSelect(key: string) { router.push(key) }
+
+function closeEnvironmentCheck() {
+  showEnvironmentCheck.value = false
+}
 </script>
 
 <template>
   <n-config-provider :theme-overrides="themeOverrides" :locale="naiveLocale" :date-locale="naiveDateLocale">
     <n-message-provider>
+      <!-- 环境检查弹窗 -->
+      <n-modal
+        v-model:show="showEnvironmentCheck"
+        :title="t('app.environmentCheck')"
+        preset="dialog"
+        type="warning"
+        @positive-click="closeEnvironmentCheck"
+        :mask-closable="false"
+      >
+        <n-alert v-if="!hasVersionsDetected" type="info" class="mb-4">
+          {{ t('app.checkingEnvironment') }}
+        </n-alert>
+
+        <n-alert
+          v-if="hasVersionsDetected && hasToolsNotInstalled"
+          type="warning"
+          class="mb-4"
+        >
+          {{ t('app.toolsNotFound') }}
+        </n-alert>
+
+        <n-alert
+          v-if="hasVersionsDetected && !hasToolsNotInstalled"
+          type="success"
+          class="mb-4"
+        >
+          {{ t('app.allToolsReady') }}
+        </n-alert>
+
+        <n-space vertical :size="8" class="mt-4">
+          <div v-if="configStore.versions.ytdlp" class="flex items-center gap-2">
+            <n-icon :component="configStore.versions.ytdlp.includes('未安装') || configStore.versions.ytdlp.includes('not installed') ? AlertCircle : CheckCircle" :color="configStore.versions.ytdlp.includes('未安装') || configStore.versions.ytdlp.includes('not installed') ? '#ef4444' : '#10b981'" size="18" />
+            <strong class="w-24 text-center flex-shrink-0">yt-dlp:</strong>
+            <span class="font-mono text-gray-600">{{ configStore.versions.ytdlp }}</span>
+          </div>
+          <div v-if="configStore.versions.deno" class="flex items-center gap-2">
+            <n-icon :component="configStore.versions.deno.includes('未安装') || configStore.versions.deno.includes('not installed') ? AlertCircle : CheckCircle" :color="configStore.versions.deno.includes('未安装') || configStore.versions.deno.includes('not installed') ? '#ef4444' : '#10b981'" size="18" />
+            <strong class="w-24 text-center flex-shrink-0">deno:</strong>
+            <span class="font-mono text-gray-600">{{ configStore.versions.deno }}</span>
+          </div>
+          <div v-if="configStore.versions.ffmpeg" class="flex items-center gap-2">
+            <n-icon :component="configStore.versions.ffmpeg.includes('未安装') || configStore.versions.ffmpeg.includes('not installed') ? AlertCircle : CheckCircle" :color="configStore.versions.ffmpeg.includes('未安装') || configStore.versions.ffmpeg.includes('not installed') ? '#ef4444' : '#10b981'" size="18" />
+            <strong class="w-24 text-center flex-shrink-0">ffmpeg:</strong>
+            <span class="font-mono text-gray-600">{{ configStore.versions.ffmpeg }}</span>
+          </div>
+          <div v-if="configStore.versions.ffprobe" class="flex items-center gap-2">
+            <n-icon :component="configStore.versions.ffprobe.includes('未安装') || configStore.versions.ffprobe.includes('not installed') ? AlertCircle : CheckCircle" :color="configStore.versions.ffprobe.includes('未安装') || configStore.versions.ffprobe.includes('not installed') ? '#ef4444' : '#10b981'" size="18" />
+            <strong class="w-24 text-center flex-shrink-0">ffprobe:</strong>
+            <span class="font-mono text-gray-600">{{ configStore.versions.ffprobe }}</span>
+          </div>
+        </n-space>
+      </n-modal>
+
       <n-layout has-sider class="h-screen bg-gray-50">
         <n-layout-sider
           bordered

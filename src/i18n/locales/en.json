@@ -19,6 +19,13 @@
     "warning": "Warning",
     "info": "Info"
   },
+  "app": {
+    "checkingEnvironment": "Checking environment...",
+    "environmentCheck": "Environment Check",
+    "allToolsReady": "All tools are ready!",
+    "toolsNotFound": "Some tools are not installed or not in PATH",
+    "version": "Version"
+  },
   "menu": {
     "download": "Download Manager",
     "channelExtraction": "Channel Extraction",
@@ -91,9 +98,10 @@
     "subtitle": "Manage download preferences, core engine and authentication",
     "downloadConfig": "Download Configuration",
     "downloadPath": "Default Download Path",
+    "downloadPathPlaceholder": "Click the button on the right to select a path",
     "browse": "Browse",
     "ytdlpPath": "yt-dlp Executable Path",
-    "placeholder": "yt-dlp.exe absolute or relative path",
+    "ytdlpPathPlaceholder": "yt-dlp.exe absolute or relative path",
     "selectFile": "Select",
     "cookieSource": "Cookie Source",
     "cookiePath": "Cookie File Path",
@@ -105,7 +113,22 @@
     "envTest": "Environment Variable Test",
     "checkVersion": "Check Version",
     "checking": "Checking...",
-    "versionHint": "Check the version of dependency tools in system environment"
+    "versionHint": "Check the version of dependency tools in system environment",
+    "selectDownloadFolder": "Select download save directory",
+    "selectCookieFile": "Select Cookie file",
+    "selectYtdlpFile": "Select yt-dlp executable",
+    "saveSuccess": "Configuration successfully saved to local!",
+    "saveFailed": "Save failed: {error}",
+    "reset": "Reset",
+    "saveChanges": "Save Changes",
+    "browserOptions": {
+      "chrome": "Chrome",
+      "firefox": "Firefox",
+      "edge": "Edge",
+      "safari": "Safari",
+      "opera": "Opera",
+      "custom": "Custom File"
+    }
   },
   "status": {
     "finished": "Finished",

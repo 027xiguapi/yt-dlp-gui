@@ -19,6 +19,13 @@
     "warning": "警告",
     "info": "信息"
   },
+  "app": {
+    "checkingEnvironment": "环境检查中...",
+    "environmentCheck": "环境检查",
+    "allToolsReady": "所有工具已就绪！",
+    "toolsNotFound": "部分工具未安装或不在 PATH 中",
+    "version": "版本"
+  },
   "menu": {
     "download": "下载管理",
     "channelExtraction": "频道提取",
@@ -67,9 +74,9 @@
     "noResults": "没有提取结果。输入频道 URL 并点击提取视频。"
   },
   "sniffer": {
-    "title": "YouTube 资源嗅探",
+    "title": "网站资源嗅探",
     "sniffResources": "嗅探资源",
-    "videoUrl": "YouTube 视频 URL:",
+    "videoUrl": "网站视频 URL:",
     "startSniff": "开始嗅探",
     "sniffing": "嗅探中...",
     "capturedResources": "捕获的资源",
@@ -82,7 +89,7 @@
     "videoSize": "视频总大小",
     "noVideos": "未捕获视频",
     "noImages": "未捕获图片",
-    "noResults": "输入 YouTube URL 并点击'开始嗅探'来捕获资源",
+    "noResults": "输入网站 URL 并点击'开始嗅探'来捕获资源",
     "copy": "复制",
     "view": "查看"
   },
@@ -91,9 +98,10 @@
     "subtitle": "管理下载偏好、核心引擎及身份验证",
     "downloadConfig": "下载配置",
     "downloadPath": "默认下载路径",
+    "downloadPathPlaceholder": "点击右侧按钮选择路径",
     "browse": "浏览",
     "ytdlpPath": "yt-dlp 可执行文件路径",
-    "placeholder": "yt-dlp.exe 绝对路径或相对路径",
+    "ytdlpPathPlaceholder": "yt-dlp.exe 绝对路径或相对路径",
     "selectFile": "选择",
     "cookieSource": "Cookie 来源",
     "cookiePath": "Cookie 文件路径",
@@ -105,7 +113,22 @@
     "envTest": "环境变量测试",
     "checkVersion": "检测版本",
     "checking": "检测中...",
-    "versionHint": "检查系统环境中的依赖工具版本"
+    "versionHint": "检查系统环境中的依赖工具版本",
+    "selectDownloadFolder": "选择下载保存目录",
+    "selectCookieFile": "选择 Cookie 文件",
+    "selectYtdlpFile": "选择 yt-dlp 可执行文件",
+    "saveSuccess": "配置已成功保存到本地！",
+    "saveFailed": "保存失败: {error}",
+    "reset": "重置",
+    "saveChanges": "保存更改",
+    "browserOptions": {
+      "chrome": "Chrome",
+      "firefox": "Firefox",
+      "edge": "Edge",
+      "safari": "Safari",
+      "opera": "Opera",
+      "custom": "自定义文件"
+    }
   },
   "status": {
     "finished": "已完成",

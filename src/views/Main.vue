@@ -36,13 +36,14 @@ function formatSpeed(speed: string): string {
 
 onMounted(async () => {
   await configStore.loadConfig();
+  await downloadStore.initializeFromDatabase();
 
   const appWindow = await getCurrentWindow();
   await appWindow.listen<any>("download_progress", (event) => {
     const data = event.payload;
     downloadStore.updateTask(data.id, {
       status: data.status,
-      progress: data.progress ? parseFloat(data.progress) : undefined,
+      progress: data.progress ? Number(parseFloat(data.progress).toFixed(2)) : undefined,
       speed: data.speed ? formatSpeed(data.speed) : undefined,
       eta: data.eta,
       size: data.size,

@@ -71,7 +71,10 @@
     "extractedUrls": "Extracted URLs:",
     "addToQueue": "Add {count} videos to download queue",
     "clearResults": "Clear Results",
-    "noResults": "No extraction results yet. Enter a channel URL and click Extract Videos."
+    "noResults": "No extraction results yet. Enter a channel URL and click Extract Videos.",
+    "noUrlsWarning": "No URLs to add",
+    "noDownloadPathWarning": "Please select a download path in settings first",
+    "addSuccess": "Successfully added {count} videos to download queue"
   },
   "sniffer": {
     "title": "YouTube Resource Sniffer",

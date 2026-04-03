@@ -57,12 +57,13 @@
     "openFolderFailed": "Failed to open folder",
     "noUrlError": "Please confirm you entered a URL and set a download path",
     "noValidUrl": "No valid links found",
-    "addSuccess": "Successfully added {count} tasks, starting download..."
+    "addSuccess": "Successfully added {count} tasks, starting download...",
+    "searchPlaceholder": "Search title or URL..."
   },
   "channelExtraction": {
     "title": "Channel Extraction",
     "channelUrl": "Channel URL",
-    "placeholder": "https://www.youtube.com/@ChannelName/videos",
+    "placeholder": "https://www.youtube.com/xxxx/videos",
     "extract": "Extract Videos",
     "extracting": "Extracting...",
     "results": "Extraction Results",

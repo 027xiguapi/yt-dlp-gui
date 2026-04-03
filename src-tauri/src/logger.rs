@@ -26,7 +26,7 @@ pub fn init_logger() {
 
 fn get_log_dir() -> PathBuf {
     if let Ok(app_data) = std::env::var("APPDATA") {
-        PathBuf::from(app_data).join("video-dlp-gui").join("logs")
+        PathBuf::from(app_data).join("video-dlp").join("logs")
     } else {
         PathBuf::from("./logs")
     }

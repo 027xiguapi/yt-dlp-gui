@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from "vue";
+import { ref, onMounted, h, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -11,6 +11,12 @@ import { Trash2, Copy, Play, CheckCircle2, FolderOpen } from "@lucide/vue";
 import { useConfigStore } from "../stores/configStore";
 import { useDownloadStore } from "../stores/downloadStore";
 
+interface VideoInfoResult {
+  title: string;
+  thumbnail: string;
+  thumbnails: { url: string; width?: number; height?: number }[];
+}
+
 const { t } = useI18n();
 const configStore = useConfigStore();
 const downloadStore = useDownloadStore();
@@ -18,6 +24,25 @@ const message = useMessage();
 
 const urlInput = ref("");
 const checkedRowKeys = ref<string[]>([]);
+const fetchingInfo = ref(false);
+const searchKeyword = ref("");
+
+// 搜索过滤 + 分页
+const filteredTaskList = computed(() => {
+  const keyword = searchKeyword.value.trim().toLowerCase();
+  if (!keyword) return downloadStore.taskList;
+  return downloadStore.taskList.filter(
+    task => task.title.toLowerCase().includes(keyword) || task.url.toLowerCase().includes(keyword)
+  );
+});
+
+const pagination = ref({
+  page: 1,
+  pageSize: 10,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50],
+  prefix: ({ itemCount }: { itemCount: number | undefined }) => `共 ${itemCount ?? 0} 条`,
+});
 
 // 格式化速度，保留一位小数
 function formatSpeed(speed: string): string {
@@ -55,9 +80,22 @@ onMounted(async () => {
 
 // --- 逻辑处理 ---
 
+async function fetchVideoInfo(url: string): Promise<VideoInfoResult | null> {
+  try {
+    const info = await invoke<VideoInfoResult>("get_video_info", {
+      url,
+      ytdlpPath: configStore.ytdlpPath || null,
+    });
+    return info;
+  } catch (err) {
+    console.warn(`获取视频信息失败 ${url}:`, err);
+    return null;
+  }
+}
+
 async function addUrls() {
   if (!urlInput.value.trim() || !configStore.downloadPath) {
-    message.warning("请确认输入了 URL 并设置了下载路径");
+    message.warning(t("main.noUrlError"));
     return;
   }
 
@@ -75,13 +113,35 @@ async function addUrls() {
     });
 
   if (urls.length === 0) {
-    message.error("未发现有效的链接");
+    message.error(t("main.noValidUrl"));
     return;
   }
 
-  await downloadStore.addMultipleTasks(urls, configStore.selectedPreset, configStore.downloadPath);
+  fetchingInfo.value = true;
+
+  // 先获取每个视频的详情
+  const infoMap = new Map<string, VideoInfoResult>();
+  for (const url of urls) {
+    const info = await fetchVideoInfo(url);
+    if (info) {
+      infoMap.set(url, info);
+    }
+  }
+
+  // 带详情信息添加任务
+  for (const url of urls) {
+    const info = infoMap.get(url);
+    await downloadStore.addTask(
+      url,
+      configStore.selectedPreset,
+      configStore.downloadPath,
+      info ? { title: info.title, thumbnail: info.thumbnail } : undefined,
+    );
+  }
+
+  fetchingInfo.value = false;
   urlInput.value = "";
-  message.success(`成功添加 ${urls.length} 个任务，开始下载...`);
+  message.success(t("main.addSuccess", { count: urls.length }));
 
   // 自动批量下载新添加的任务
   const newTasks = downloadStore.taskList.filter(t => t.status === "Queued");
@@ -164,11 +224,31 @@ const columns = [
   {
     title: '标题',
     key: 'title',
-    width: 160,
+    width: 220,
     ellipsis: { tooltip: true },
     render(row: any) {
       const displayText = row.title || row.url;
-      return h('span', { title: displayText }, displayText);
+      const children: any[] = [];
+
+      if (row.thumbnail) {
+        children.push(
+          h('img', {
+            src: row.thumbnail,
+            style: 'width: 64px; height: 36px; object-fit: cover; border-radius: 4px; flex-shrink: 0; margin-right: 8px;',
+          })
+        );
+      }
+
+      children.push(
+        h('span', {
+          style: row.thumbnail ? 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' : '',
+          title: displayText,
+        }, displayText)
+      );
+
+      return h('div', {
+        style: 'display: flex; align-items: center;',
+      }, children);
     }
   },
   {
@@ -281,8 +361,8 @@ const columns = [
             :placeholder="t('main.pasteUrl')"
             :autosize="{ minRows: 3, maxRows: 6 }"
           />
-          <n-button type="primary" size="large" @click="addUrls" block>
-            {{ t('main.addQueue') }}
+          <n-button type="primary" size="large" @click="addUrls" block :loading="fetchingInfo">
+            {{ fetchingInfo ? t('channelExtraction.extracting') : t('main.addQueue') }}
           </n-button>
         </n-space>
       </n-card>
@@ -290,6 +370,12 @@ const columns = [
       <n-card :title="t('main.downloadQueue')" :segmented="{ content: true }">
         <template #header-extra>
           <n-space>
+            <n-input
+              v-model:value="searchKeyword"
+              :placeholder="t('main.searchPlaceholder')"
+              clearable
+              style="width: 200px"
+            />
             <n-button
               secondary
               type="primary"
@@ -313,13 +399,12 @@ const columns = [
         </template>
 
         <n-data-table
-          remote
           ref="table"
           :columns="columns"
-          :data="downloadStore.taskList"
+          :data="filteredTaskList"
           :row-key="(row) => row.id"
           v-model:checked-row-keys="checkedRowKeys"
-          :pagination="false"
+          :pagination="pagination"
           :max-height="500"
         />
       </n-card>

@@ -3,7 +3,7 @@ import Database from '@tauri-apps/plugin-sql';
 let db: Database;
 
 export async function initDatabase() {
-  db = await Database.load('sqlite:video-dlp-gui.db')
+  db = await Database.load('sqlite:video-dlp.db')
   return db;
 }
 
@@ -116,7 +116,7 @@ export async function getDownloadHistory(limit: number = 100): Promise<any[]> {
 }
 
 export async function getDownloadHistoryById(id: string): Promise<any | null> {
-  const result = await db.select(
+  const result = await db.select<any[]>(
     'SELECT * FROM download_history WHERE id = ?',
     [id]
   );
@@ -136,7 +136,7 @@ export async function createUser(username: string, passwordHash: string, email?:
 }
 
 export async function getUserByUsername(username: string): Promise<any | null> {
-  const result = await db.select(
+  const result = await db.select<any[]>(
     'SELECT * FROM user WHERE username = ?',
     [username]
   );
@@ -166,7 +166,7 @@ export async function createLicense(
 }
 
 export async function getLicenseByKey(licenseKey: string): Promise<any | null> {
-  const result = await db.select(
+  const result = await db.select<any[]>(
     'SELECT * FROM software_license WHERE license_key = ?',
     [licenseKey]
   );

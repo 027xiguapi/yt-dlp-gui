@@ -57,12 +57,13 @@
     "openFolderFailed": "打开文件夹失败",
     "noUrlError": "请确认输入了 URL 并设置了下载路径",
     "noValidUrl": "未发现有效的链接",
-    "addSuccess": "成功添加 {count} 个任务，开始下载..."
+    "addSuccess": "成功添加 {count} 个任务，开始下载...",
+    "searchPlaceholder": "搜索标题或 URL..."
   },
   "channelExtraction": {
     "title": "频道提取",
     "channelUrl": "频道 URL",
-    "placeholder": "https://www.youtube.com/@ChannelName/videos",
+    "placeholder": "https://www.youtube.com/xxxx/videos",
     "extract": "提取视频",
     "extracting": "提取中...",
     "results": "提取结果",

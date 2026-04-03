@@ -82,3 +82,17 @@ pub struct CapturedResource {
     pub mime_type: String,
     pub size: u64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThumbnailInfo {
+    pub url: String,
+    pub width: Option<u64>,
+    pub height: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VideoInfo {
+    pub title: String,
+    pub thumbnail: String,
+    pub thumbnails: Vec<ThumbnailInfo>,
+}

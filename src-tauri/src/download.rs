@@ -1,4 +1,6 @@
 use crate::models::DownloadTask;
+use crate::models::VideoInfo;
+use crate::models::ThumbnailInfo;
 use crate::logger;
 use tauri::Emitter;
 use tokio::io::AsyncBufReadExt;
@@ -215,4 +217,68 @@ pub async fn start_download(
 #[tauri::command]
 pub fn generate_task_id() -> String {
     uuid::Uuid::new_v4().to_string()
+}
+
+#[tauri::command]
+pub async fn get_video_info(
+    url: String,
+    ytdlp_path: Option<String>,
+) -> Result<VideoInfo, String> {
+    let ytdlp_path = std::path::PathBuf::from(
+        ytdlp_path.unwrap_or_else(|| "./win/yt-dlp.exe".to_string()),
+    );
+
+    if !ytdlp_path.exists() {
+        return Err(format!("yt-dlp not found: {}", ytdlp_path.display()));
+    }
+
+    let output = TokioCommand::new(&ytdlp_path)
+        .env("PYTHONIOENCODING", "utf-8")
+        .env("PYTHONUTF8", "1")
+        .env("PYTHONLEGACYWINDOWSSTDIO", "1")
+        .env("LC_ALL", "C.UTF-8")
+        .arg("--no-warnings")
+        .arg("--no-color")
+        .arg("--encoding")
+        .arg("utf-8")
+        .arg("-j")
+        .arg("--skip-download")
+        .arg(&url)
+        .output()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(stderr.to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    let raw: serde_json::Value = serde_json::from_str(&stdout)
+        .map_err(|e| format!("Failed to parse yt-dlp output: {}", e))?;
+
+    let title = raw["title"].as_str().unwrap_or("").to_string();
+    let thumbnail = raw["thumbnail"].as_str().unwrap_or("").to_string();
+
+    let thumbnails: Vec<ThumbnailInfo> = raw["thumbnails"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|t| {
+                    Some(ThumbnailInfo {
+                        url: t["url"].as_str()?.to_string(),
+                        width: t["width"].as_u64(),
+                        height: t["height"].as_u64(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok(VideoInfo {
+        title,
+        thumbnail,
+        thumbnails,
+    })
 }

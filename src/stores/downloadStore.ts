@@ -14,6 +14,7 @@ export interface DownloadTask {
   eta: string
   size: string
   title: string
+  thumbnail: string
   error: any
 }
 
@@ -67,6 +68,7 @@ export const useDownloadStore = defineStore('download', () => {
           eta: task.eta || '-',
           size: task.size || '-',
           title: task.title || task.url,
+          thumbnail: task.thumbnail || '',
           error: task.error || '',
         })
       })
@@ -84,7 +86,7 @@ export const useDownloadStore = defineStore('download', () => {
     }
   }
 
-  async function addTask(url: string, preset: string, path: string) {
+  async function addTask(url: string, preset: string, path: string, extra?: { title?: string; thumbnail?: string }) {
     const taskId = await invoke<string>('generate_task_id')
     const task: DownloadTask = {
       id: taskId,
@@ -96,7 +98,8 @@ export const useDownloadStore = defineStore('download', () => {
       speed: '-',
       eta: '-',
       size: '-',
-      title: url,
+      title: extra?.title || url,
+      thumbnail: extra?.thumbnail || '',
       error: '',
     }
     tasks.value.set(taskId, task)

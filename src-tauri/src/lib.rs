@@ -25,7 +25,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_sql::Builder::new().add_migrations("sqlite:video-dlp-gui.db", database::get_migrations()).build())
+        .plugin(tauri_plugin_sql::Builder::new().add_migrations("sqlite:video-dlp.db", database::get_migrations()).build())
         .setup(|app| {
             app::setup_app(app)?;
             Ok(())
@@ -48,6 +48,7 @@ pub fn run() {
             sniff_youtube_resources,
             check_version,
             open_download_folder,
+            get_video_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

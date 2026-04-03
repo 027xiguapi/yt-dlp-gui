@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "video-dlp-gui",
+  "productName": "video-dlp",
   "version": "0.1.0",
-  "identifier": "com.administrator.video-dlp-gui",
+  "identifier": "com.administrator.video-dlp",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "video-dlp-gui",
+        "title": "video-dlp",
         "width": 800,
         "height": 600
       }

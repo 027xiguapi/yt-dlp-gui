@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import * as db from '../services/database'
 
 export interface Config {
   general: {
@@ -56,6 +57,20 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
+  async function loadFromDatabase() {
+    try {
+      const allConfig = await db.getAllConfig()
+      if (allConfig['downloadPath']) downloadPath.value = allConfig['downloadPath']
+      if (allConfig['cookiePath']) cookiePath.value = allConfig['cookiePath']
+      if (allConfig['cookieBrowser']) cookieBrowser.value = allConfig['cookieBrowser']
+      if (allConfig['ytdlpPath']) ytdlpPath.value = allConfig['ytdlpPath']
+      if (allConfig['selectedPreset']) selectedPreset.value = allConfig['selectedPreset']
+      if (allConfig['globalArgs']) globalArgs.value = allConfig['globalArgs']
+    } catch (error) {
+      console.error('Failed to load from database:', error)
+    }
+  }
+
   function saveToStorage() {
     try {
       const data = {
@@ -72,10 +87,24 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
+  async function saveToDatabase() {
+    try {
+      await db.saveConfig('downloadPath', downloadPath.value)
+      await db.saveConfig('cookiePath', cookiePath.value)
+      await db.saveConfig('cookieBrowser', cookieBrowser.value)
+      await db.saveConfig('ytdlpPath', ytdlpPath.value)
+      await db.saveConfig('selectedPreset', selectedPreset.value)
+      await db.saveConfig('globalArgs', globalArgs.value)
+    } catch (error) {
+      console.error('Failed to save to database:', error)
+    }
+  }
+
   async function loadConfig() {
     isLoading.value = true
     try {
       loadFromStorage()
+      await loadFromDatabase()
       const defaultConfig = await invoke<Config>('get_default_config')
       config.value = defaultConfig
       if (!downloadPath.value) {
@@ -94,6 +123,7 @@ export const useConfigStore = defineStore('config', () => {
         globalArgs.value = defaultConfig.general.global_args
       }
       saveToStorage()
+      await saveToDatabase()
     } catch (error) {
       console.error('Failed to load config:', error)
     } finally {
@@ -103,41 +133,49 @@ export const useConfigStore = defineStore('config', () => {
 
   async function saveConfig() {
     saveToStorage()
+    await saveToDatabase()
   }
 
   function setDownloadPath(path: string) {
     downloadPath.value = path
     saveToStorage()
+    saveToDatabase()
   }
 
   function setCookiePath(path: string) {
     cookiePath.value = path
     saveToStorage()
+    saveToDatabase()
   }
 
   function setCookieBrowser(browser: string) {
     cookieBrowser.value = browser
     saveToStorage()
+    saveToDatabase()
   }
 
   function clearCookiePath() {
     cookiePath.value = ''
     saveToStorage()
+    saveToDatabase()
   }
 
   function setYtdlpPath(path: string) {
     ytdlpPath.value = path
     saveToStorage()
+    saveToDatabase()
   }
 
   function setSelectedPreset(preset: string) {
     selectedPreset.value = preset
     saveToStorage()
+    saveToDatabase()
   }
 
   function setGlobalArgs(args: string) {
     globalArgs.value = args
     saveToStorage()
+    saveToDatabase()
   }
 
   async function checkVersions() {

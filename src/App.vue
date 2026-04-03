@@ -10,6 +10,7 @@ import {
 import { Download, Radar, Settings, Clapperboard, AlertCircle, CheckCircle } from '@lucide/vue'
 import { h } from 'vue'
 import { useConfigStore } from './stores/configStore'
+import { initDatabase } from './services/database'
 
 const router = useRouter()
 const route = useRoute()
@@ -70,6 +71,7 @@ async function performEnvironmentCheck() {
 
 // 初始化时检查环境
 onMounted(async () => {
+  await initDatabase()
   await configStore.loadConfig()
   await performEnvironmentCheck()
   setTimeout(() => {

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "video-dlp-gui",
   "version": "0.1.0",
-  "identifier": "com.administrator.tauri-app",
+  "identifier": "com.administrator.video-dlp-gui",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
+        "title": "video-dlp-gui",
         "width": 800,
         "height": 600
       }
@@ -26,6 +26,9 @@
             "main"
           ],
           "permissions": [
+            "sql:allow-load",
+            "sql:allow-execute",
+            "sql:allow-select",
             "core:window:allow-close",
             "core:window:allow-minimize",
             "core:window:allow-maximize",

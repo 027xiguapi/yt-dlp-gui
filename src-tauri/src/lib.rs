@@ -6,6 +6,7 @@ mod extraction;
 mod utils;
 mod app;
 mod logger;
+mod database;
 
 pub use models::*;
 pub use config::*;
@@ -24,6 +25,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_sql::Builder::new().add_migrations("sqlite:video-dlp-gui.db", database::get_migrations()).build())
         .setup(|app| {
             app::setup_app(app)?;
             Ok(())

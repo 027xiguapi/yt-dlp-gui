@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import * as db from '../services/database'
 
 export interface DownloadTask {
   id: string
@@ -50,6 +51,30 @@ export const useDownloadStore = defineStore('download', () => {
     }
   }
 
+  async function loadFromDatabase() {
+    try {
+      const history = await db.getDownloadHistory(1000)
+      tasks.value.clear()
+      history.forEach((task: any) => {
+        tasks.value.set(task.id, {
+          id: task.id,
+          url: task.url,
+          preset: task.preset,
+          path: task.path,
+          status: task.status,
+          progress: task.progress || 0,
+          speed: task.speed || '-',
+          eta: task.eta || '-',
+          size: task.size || '-',
+          title: task.title || task.url,
+          error: task.error || '',
+        })
+      })
+    } catch (error) {
+      console.error('Failed to load from database:', error)
+    }
+  }
+
   function saveToStorage() {
     try {
       const taskArray = Array.from(tasks.value.values())
@@ -76,6 +101,14 @@ export const useDownloadStore = defineStore('download', () => {
     }
     tasks.value.set(taskId, task)
     saveToStorage()
+
+    // 保存到数据库
+    try {
+      await db.saveDownloadHistory(task)
+    } catch (error) {
+      console.error('Failed to save task to database:', error)
+    }
+
     return taskId
   }
 
@@ -93,6 +126,13 @@ export const useDownloadStore = defineStore('download', () => {
     if (task) {
       Object.assign(task, updates)
       saveToStorage()
+
+      // 更新数据库
+      try {
+        db.updateDownloadHistory(id, updates)
+      } catch (error) {
+        console.error('Failed to update task in database:', error)
+      }
     }
   }
 
@@ -101,6 +141,13 @@ export const useDownloadStore = defineStore('download', () => {
     if (task && (task.status === 'Queued' || task.status === 'Finished' || task.status === 'ERROR')) {
       tasks.value.delete(id)
       saveToStorage()
+
+      // 从数据库删除
+      try {
+        db.deleteDownloadHistory(id)
+      } catch (error) {
+        console.error('Failed to delete task from database:', error)
+      }
     }
   }
 
@@ -126,6 +173,10 @@ export const useDownloadStore = defineStore('download', () => {
     loadFromStorage()
   }
 
+  async function initializeFromDatabase() {
+    await loadFromDatabase()
+  }
+
   return {
     tasks,
     taskList,
@@ -139,5 +190,6 @@ export const useDownloadStore = defineStore('download', () => {
     clearAll,
     getTask,
     initializeFromStorage,
+    initializeFromDatabase,
   }
 })

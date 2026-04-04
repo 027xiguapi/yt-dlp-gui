@@ -201,3 +201,120 @@ export async function updateLicenseStatus(licenseKey: string, isActive: boolean)
     [isActive ? 1 : 0, isActive ? 'active' : 'inactive', licenseKey]
   );
 }
+
+// RSS 订阅相关操作
+export async function saveRssFeed(data: {
+  channel_id: string;
+  title: string;
+  url: string;
+  description?: string;
+  thumbnail?: string;
+}) {
+  await db.execute(
+    `INSERT INTO rss_feeds (channel_id, title, url, description, thumbnail, last_checked, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    [data.channel_id, data.title, data.url, data.description || null, data.thumbnail || null]
+  );
+}
+
+export async function getRssFeeds(): Promise<any[]> {
+  return await db.select(
+    'SELECT * FROM rss_feeds ORDER BY created_at DESC'
+  );
+}
+
+export async function updateRssFeed(id: number, data: any) {
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (data.last_checked !== undefined) {
+    updates.push('last_checked = ?');
+    values.push(data.last_checked);
+  }
+  if (data.title !== undefined) {
+    updates.push('title = ?');
+    values.push(data.title);
+  }
+  if (data.thumbnail !== undefined) {
+    updates.push('thumbnail = ?');
+    values.push(data.thumbnail);
+  }
+  if (data.auto_refresh !== undefined) {
+    updates.push('auto_refresh = ?');
+    values.push(data.auto_refresh ? 1 : 0);
+  }
+  if (data.refresh_interval_minutes !== undefined) {
+    updates.push('refresh_interval_minutes = ?');
+    values.push(data.refresh_interval_minutes);
+  }
+
+  if (updates.length > 0) {
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+    await db.execute(
+      `UPDATE rss_feeds SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+}
+
+export async function deleteRssFeed(id: number) {
+  await db.execute('DELETE FROM rss_items WHERE feed_id = ?', [id]);
+  await db.execute('DELETE FROM rss_feeds WHERE id = ?', [id]);
+}
+
+export async function saveRssItem(data: {
+  feed_id: number;
+  video_id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  published_at?: string;
+}) {
+  await db.execute(
+    `INSERT OR IGNORE INTO rss_items (feed_id, video_id, title, url, thumbnail, published_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [data.feed_id, data.video_id, data.title, data.url, data.thumbnail || null, data.published_at || null]
+  );
+}
+
+export async function saveRssItems(items: any[]) {
+  for (const item of items) {
+    await saveRssItem(item);
+  }
+}
+
+export async function getRssItems(feedId: number): Promise<any[]> {
+  return await db.select(
+    'SELECT * FROM rss_items WHERE feed_id = ? ORDER BY published_at DESC',
+    [feedId]
+  );
+}
+
+export async function getAllRssItems(): Promise<any[]> {
+  return await db.select(
+    'SELECT ri.*, rf.title as feed_title, rf.thumbnail as feed_thumbnail FROM rss_items ri LEFT JOIN rss_feeds rf ON ri.feed_id = rf.id ORDER BY ri.published_at DESC LIMIT 200'
+  );
+}
+
+export async function updateRssItem(id: number, data: any) {
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (data.downloaded !== undefined) {
+    updates.push('downloaded = ?');
+    values.push(data.downloaded ? 1 : 0);
+  }
+  if (data.download_task_id !== undefined) {
+    updates.push('download_task_id = ?');
+    values.push(data.download_task_id);
+  }
+
+  if (updates.length > 0) {
+    values.push(id);
+    await db.execute(
+      `UPDATE rss_items SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+  }
+}

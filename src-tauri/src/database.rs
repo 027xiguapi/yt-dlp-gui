@@ -79,5 +79,48 @@ pub fn get_migrations() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        // RSS 订阅表
+        Migration {
+            version: 5,
+            description: "Create rss_feeds table",
+            sql: "
+                CREATE TABLE IF NOT EXISTS rss_feeds (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    channel_id TEXT UNIQUE NOT NULL,
+                    title TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    description TEXT,
+                    thumbnail TEXT,
+                    last_checked DATETIME,
+                    auto_refresh INTEGER DEFAULT 1,
+                    refresh_interval_minutes INTEGER DEFAULT 30,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            ",
+            kind: MigrationKind::Up,
+        },
+        // RSS 视频项表
+        Migration {
+            version: 6,
+            description: "Create rss_items table",
+            sql: "
+                CREATE TABLE IF NOT EXISTS rss_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    feed_id INTEGER NOT NULL,
+                    video_id TEXT UNIQUE NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    url TEXT NOT NULL,
+                    thumbnail TEXT,
+                    published_at DATETIME,
+                    downloaded INTEGER DEFAULT 0,
+                    download_task_id TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (feed_id) REFERENCES rss_feeds(id) ON DELETE CASCADE
+                );
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

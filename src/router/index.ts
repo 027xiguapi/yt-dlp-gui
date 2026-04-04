@@ -12,6 +12,11 @@ const routes = [
     meta: { title: 'Channel Extraction' }
   },
   {
+    path: '/rss',
+    component: () => import('../views/RssSubscription.vue'),
+    meta: { title: 'RSS Subscription' }
+  },
+  {
     path: '/sniffer',
     component: () => import('../views/Sniffer.vue'),
     meta: { title: 'Resource Sniffer' }

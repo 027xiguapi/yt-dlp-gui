@@ -96,3 +96,22 @@ pub struct VideoInfo {
     pub thumbnail: String,
     pub thumbnails: Vec<ThumbnailInfo>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RssFeedPreviewItem {
+    pub video_id: String,
+    pub title: String,
+    pub url: String,
+    pub thumbnail: String,
+    pub published_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RssFeedPreview {
+    pub channel_id: String,
+    pub title: String,
+    pub url: String,
+    pub thumbnail: String,
+    pub description: String,
+    pub items: Vec<RssFeedPreviewItem>,
+}

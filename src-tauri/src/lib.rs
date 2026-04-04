@@ -7,12 +7,14 @@ mod utils;
 mod app;
 mod logger;
 mod database;
+mod rss;
 
 pub use models::*;
 pub use config::*;
 pub use download::*;
 pub use extraction::*;
 pub use utils::*;
+pub use rss::*;
 
 use tauri::{Emitter, Manager};
 
@@ -49,6 +51,7 @@ pub fn run() {
             check_version,
             open_download_folder,
             get_video_info,
+            parse_rss_feed,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

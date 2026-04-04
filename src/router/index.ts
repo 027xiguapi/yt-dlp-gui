@@ -25,6 +25,11 @@ const routes = [
     path: '/settings',
     component: () => import('../views/Settings.vue'),
     meta: { title: 'Settings' }
+  },
+  {
+    path: '/platform-test',
+    component: () => import('../views/PlatformTest.vue'),
+    meta: { title: 'Platform Test' }
   }
 ]
 

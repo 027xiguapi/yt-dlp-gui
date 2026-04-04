@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import {
   NButton, NInput, NCard, NSpace, NEmpty, NModal, NCheckbox, useMessage,
-  NImage, NTag, NIcon, NSpin, NList, NListItem, NThing, NAvatar, NFlex
+  NImage, NTag, NIcon, NSpin, NAvatar
 } from 'naive-ui'
-import { Rss, RefreshCw, Plus, Trash2, Download, Check, Eye } from '@lucide/vue'
+import { Rss, RefreshCw, Plus, Trash2, Download, Check } from '@lucide/vue'
 import { useRssStore } from '../stores/rssStore'
 import { useDownloadStore } from '../stores/downloadStore'
 import { useConfigStore } from '../stores/configStore'
 
-const router = useRouter()
 const { t } = useI18n()
 const rssStore = useRssStore()
 const downloadStore = useDownloadStore()

@@ -7,7 +7,7 @@ import {
   NMessageProvider, NConfigProvider, zhCN, dateZhCN, enUS, dateEnUS, GlobalThemeOverrides, NButton, NSpace,
   NAlert, NIcon, NModal
 } from 'naive-ui'
-import { Download, Radar, Settings, Clapperboard, AlertCircle, CheckCircle, Rss } from '@lucide/vue'
+import { Download, Radar, Settings, Clapperboard, AlertCircle, CheckCircle, Rss, Globe } from '@lucide/vue'
 import { h } from 'vue'
 import { useConfigStore } from './stores/configStore'
 import { initDatabase } from './services/database'
@@ -48,6 +48,7 @@ const menuOptions = computed(() => [
   { label: t('menu.channelExtraction'), key: '/channel-extraction', icon: () => h(Clapperboard, { size: 18 }) },
   { label: t('menu.rss'), key: '/rss', icon: () => h(Rss, { size: 18 }) },
   { label: t('menu.sniffer'), key: '/sniffer', icon: () => h(Radar, { size: 18 }) },
+  { label: t('menu.platformTest'), key: '/platform-test', icon: () => h(Globe, { size: 18 }) },
   { label: t('menu.settings'), key: '/settings', icon: () => h(Settings, { size: 18 }) }
 ])
 

@@ -7,7 +7,7 @@ import {
   NButton, NInput, NCard, NSpace, NProgress,
   NIcon, NTag, NDataTable, NPopconfirm, NTooltip, useMessage
 } from "naive-ui";
-import { Trash2, Copy, Play, CheckCircle2, FolderOpen } from "@lucide/vue";
+import { Trash2, Copy, Play, CheckCircle2, FolderOpen, Download } from "@lucide/vue";
 import { useConfigStore } from "../stores/configStore";
 import { useDownloadStore } from "../stores/downloadStore";
 
@@ -142,12 +142,13 @@ async function addUrls() {
   fetchingInfo.value = false;
   urlInput.value = "";
   message.success(t("main.addSuccess", { count: urls.length }));
+  console.log(urls, infoMap)
 
-  // 自动批量下载新添加的任务
-  const newTasks = downloadStore.taskList.filter(t => t.status === "Queued");
-  for (const task of newTasks) {
-    await runDownloadTask(task);
-  }
+  // // 自动批量下载新添加的任务
+  // const newTasks = downloadStore.taskList.filter(t => t.status === "Queued");
+  // for (const task of newTasks) {
+  //   await runDownloadTask(task);
+  // }
 }
 
 // 执行单个下载任务
@@ -309,7 +310,7 @@ const columns = [
             type: 'primary',
             disabled: !["Queued", "ERROR"].includes(row.status),
             onClick: () => runDownloadTask(row)
-          }, { default: () => h(NIcon, null, { default: () => h(Play) }) }),
+          }, { default: () => h(NIcon, null, { default: () => h(Download) }) }),
 
           // 复制按钮
           h(NButton, {

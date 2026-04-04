@@ -31,6 +31,7 @@
     "channelExtraction": "频道提取",
     "rss": "RSS 订阅",
     "sniffer": "资源嗅探",
+    "platformTest": "平台测试",
     "settings": "软件设置"
   },
   "main": {
